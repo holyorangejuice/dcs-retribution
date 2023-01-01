@@ -173,30 +173,6 @@ class Settings:
             "extremely incomplete so does not affect all weapons."
         ),
     )
-    disable_legacy_aewc: bool = boolean_option(
-        "Spawn invulnerable, always-available AEW&C aircraft (deprecated)",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        invert=True,
-        detail=(
-            "If checked, an invulnerable friendly AEW&C aircraft that begins the "
-            "mission on station will be be spawned. This behavior will be removed in a "
-            "future release."
-        ),
-    )
-    disable_legacy_tanker: bool = boolean_option(
-        "Spawn invulnerable, always-available tanker aircraft (deprecated)",
-        page=CAMPAIGN_MANAGEMENT_PAGE,
-        section=GENERAL_SECTION,
-        default=True,
-        invert=True,
-        detail=(
-            "If checked, an invulnerable friendly tanker aircraft that begins the "
-            "mission on station will be be spawned. This behavior will be removed in a "
-            "future release."
-        ),
-    )
     # Pilots and Squadrons
     ai_pilot_levelling: bool = boolean_option(
         "Allow AI pilot leveling",
@@ -379,6 +355,16 @@ class Settings:
             "option only allows the player to wait on the ground.</strong>"
         ),
     )
+    atflir_autoswap: bool = boolean_option(
+        "Auto-swap ATFLIR to LITENING",
+        MISSION_GENERATOR_PAGE,
+        GAMEPLAY_SECTION,
+        default=True,
+        detail=(
+            "Automatically swaps ATFLIR to LITENING pod for newly generated land-based F-18 flights "
+            "without having to change the payload. <u>Takes effect after current turn!</u>"
+        ),
+    )
     default_start_type: StartType = choices_option(
         "Default start type for AI aircraft",
         page=MISSION_GENERATOR_PAGE,
@@ -523,6 +509,7 @@ class Settings:
     show_red_ato: bool = False
     enable_frontline_cheats: bool = False
     enable_base_capture_cheat: bool = False
+    enable_transfer_cheat: bool = False
 
     # LUA Plugins system
     plugins: Dict[str, bool] = field(default_factory=dict)

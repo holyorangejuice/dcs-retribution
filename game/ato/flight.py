@@ -5,12 +5,13 @@ from datetime import datetime, timedelta
 from typing import Any, List, Optional, TYPE_CHECKING
 
 from dcs import Point
-from dcs.planes import C_101CC, C_101EB, Su_33
+from dcs.planes import C_101CC, C_101EB, Su_33, FA_18C_hornet
 
+from pydcs_extensions.hercules.hercules import Hercules
 from .flightroster import FlightRoster
 from .flightstate import FlightState, Navigating, Uninitialized
 from .flightstate.killed import Killed
-from .loadouts import Loadout
+from .loadouts import Loadout, Weapon
 from ..sidc import (
     Entity,
     SidcDescribable,
@@ -18,9 +19,9 @@ from ..sidc import (
     Status,
     SymbolSet,
 )
+from game.dcs.aircrafttype import AircraftType
 
 if TYPE_CHECKING:
-    from game.dcs.aircrafttype import AircraftType
     from game.sim.gameupdateevents import GameUpdateEvents
     from game.sim.simulationresults import SimulationResults
     from game.squadrons import Squadron, Pilot
@@ -31,6 +32,8 @@ if TYPE_CHECKING:
     from .flightwaypoint import FlightWaypoint
     from .package import Package
     from .starttype import StartType
+
+F18_TGP_PYLON: int = 4
 
 
 class Flight(SidcDescribable):
@@ -86,6 +89,15 @@ class Flight(SidcDescribable):
         from .flightplans.flightplanbuildertypes import FlightPlanBuilderTypes
 
         self._flight_plan_builder = FlightPlanBuilderTypes.for_flight(self)(self)
+
+        is_f18 = self.squadron.aircraft.dcs_unit_type.id == FA_18C_hornet.id
+        on_land = not self.squadron.location.is_fleet
+        if on_land and is_f18 and self.coalition.game.settings.atflir_autoswap:
+            self.loadout.pylons[F18_TGP_PYLON] = Weapon.with_clsid(
+                str(
+                    FA_18C_hornet.Pylon4.AN_AAQ_28_LITENING___Targeting_Pod_[1]["clsid"]
+                )
+            )
 
     @property
     def flight_plan(self) -> FlightPlan[Any]:
@@ -151,6 +163,10 @@ class Flight(SidcDescribable):
         return self.unit_type.dcs_unit_type.helicopter
 
     @property
+    def is_hercules(self) -> bool:
+        return self.unit_type == AircraftType.named("C-130J-30 Super Hercules")
+
+    @property
     def from_cp(self) -> ControlPoint:
         return self.departure
 
@@ -186,6 +202,8 @@ class Flight(SidcDescribable):
                 return Su_33.fuel_max * 0.8
         elif unit_type in {C_101EB, C_101CC}:
             return unit_type.fuel_max * 0.5
+        elif unit_type == Hercules:
+            return unit_type.fuel_max * 0.75
         return None
 
     def __repr__(self) -> str:
@@ -253,4 +271,8 @@ class Flight(SidcDescribable):
                 results.kill_pilot(self, pilot)
 
     def recreate_flight_plan(self) -> None:
+        from game.sim.gameupdateevents import GameUpdateEvents
+        from game.server import EventStream
+
         self._flight_plan_builder.regenerate()
+        EventStream.put_nowait(GameUpdateEvents().update_flight(self))
