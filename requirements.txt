@@ -12,7 +12,6 @@ distlib==0.3.6
 Faker==15.3.3
 fastapi==0.87.0
 filelock==3.8.0
-future==0.18.2
 h11==0.14.0
 httptools==0.5.0
 identify==2.5.9
@@ -31,7 +30,7 @@ platformdirs==2.5.4
 pluggy==1.0.0
 pre-commit==2.20.0
 pydantic==1.10.2
--e git+https://github.com/dcs-retribution/pydcs@fb1fefcb32fbab82ac36b8519b87bae32326784e#egg=pydcs
+-e git+https://github.com/dcs-retribution/pydcs@0f2b2b5cd266f99538ba572cfdcb723792b1e83b#egg=pydcs
 pyinstaller==5.6.2
 pyinstaller-hooks-contrib==2022.13
 pyparsing==3.0.9

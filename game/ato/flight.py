@@ -12,6 +12,10 @@ from .flightroster import FlightRoster
 from .flightstate import FlightState, Navigating, Uninitialized
 from .flightstate.killed import Killed
 from .loadouts import Loadout, Weapon
+from ..radio.RadioFrequencyContainer import RadioFrequencyContainer
+from ..radio.TacanContainer import TacanContainer
+from ..radio.radios import RadioFrequency
+from ..radio.tacan import TacanChannel
 from ..sidc import (
     Entity,
     SidcDescribable,
@@ -36,7 +40,7 @@ if TYPE_CHECKING:
 F18_TGP_PYLON: int = 4
 
 
-class Flight(SidcDescribable):
+class Flight(SidcDescribable, RadioFrequencyContainer, TacanContainer):
     def __init__(
         self,
         package: Package,
@@ -49,6 +53,9 @@ class Flight(SidcDescribable):
         custom_name: Optional[str] = None,
         cargo: Optional[TransferOrder] = None,
         roster: Optional[FlightRoster] = None,
+        frequency: Optional[RadioFrequency] = None,
+        channel: Optional[TacanChannel] = None,
+        callsign: Optional[str] = None,
     ) -> None:
         self.id = uuid.uuid4()
         self.package = package
@@ -67,6 +74,11 @@ class Flight(SidcDescribable):
         self.use_custom_loadout = False
         self.custom_name = custom_name
         self.group_id: int = 0
+
+        self.frequency = frequency
+        if self.unit_type.dcs_unit_type.tacan:
+            self.tacan = channel
+            self.tcn_name = callsign
 
         # Only used by transport missions.
         self.cargo = cargo
@@ -207,14 +219,13 @@ class Flight(SidcDescribable):
         return None
 
     def __repr__(self) -> str:
-        if self.custom_name:
-            return f"{self.custom_name} {self.count} x {self.unit_type}"
-        return f"[{self.flight_type}] {self.count} x {self.unit_type}"
+        return self.__str__()
 
     def __str__(self) -> str:
+        string = f"[{self.flight_type}] {self.count} x {self.unit_type}"
         if self.custom_name:
-            return f"{self.custom_name} {self.count} x {self.unit_type}"
-        return f"[{self.flight_type}] {self.count} x {self.unit_type}"
+            return f"{self.custom_name} - {string}"
+        return string
 
     def abort(self) -> None:
         from .flightplans.rtb import RtbFlightPlan
@@ -271,8 +282,16 @@ class Flight(SidcDescribable):
                 results.kill_pilot(self, pilot)
 
     def recreate_flight_plan(self) -> None:
-        from game.sim.gameupdateevents import GameUpdateEvents
-        from game.server import EventStream
-
         self._flight_plan_builder.regenerate()
-        EventStream.put_nowait(GameUpdateEvents().update_flight(self))
+
+    @staticmethod
+    def clone_flight(flight: Flight) -> Flight:
+        return Flight(
+            flight.package,
+            flight.country,
+            flight.squadron,
+            flight.count,
+            flight.flight_type,
+            flight.start_type,
+            flight.divert,
+        )

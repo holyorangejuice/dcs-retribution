@@ -104,7 +104,9 @@ class AircraftGenerator:
             ato: The ATO to spawn aircraft for.
             dynamic_runways: Runway data for carriers and FARPs.
         """
-        for package in ato.packages:
+        self._reserve_frequencies_and_tacan(ato)
+
+        for package in reversed(sorted(ato.packages, key=lambda x: x.time_over_target)):
             if not package.flights:
                 continue
             for flight in package.flights:
@@ -124,9 +126,13 @@ class AircraftGenerator:
                 splittrigger.add_condition(FlagIsFalse(flag=f"split-{id(package)}"))
                 splittrigger.add_condition(GroupDead(package.primary_flight.group_id))
                 for flight in package.flights:
-                    if flight is not package.primary_flight:
+                    if flight.flight_type in [
+                        FlightType.ESCORT,
+                        FlightType.SEAD_ESCORT,
+                    ]:
                         splittrigger.add_action(AITaskPush(flight.group_id, 1))
-                self.mission.triggerrules.triggers.append(splittrigger)
+                if len(splittrigger.actions) > 0:
+                    self.mission.triggerrules.triggers.append(splittrigger)
 
     def spawn_unused_aircraft(
         self, player_country: Country, enemy_country: Country
@@ -151,9 +157,6 @@ class AircraftGenerator:
     def _spawn_unused_for(
         self, squadron: Squadron, country: Country, faction: Faction
     ) -> None:
-        if self.game.settings.perf_disable_idle_aircraft:
-            return
-
         assert isinstance(squadron.location, Airfield)
         for _ in range(squadron.untasked_aircraft):
             # Creating a flight even those this isn't a fragged mission lets us
@@ -199,3 +202,18 @@ class AircraftGenerator:
             ).configure()
         )
         return group
+
+    def _reserve_frequencies_and_tacan(self, ato: AirTaskingOrder) -> None:
+        for package in ato.packages:
+            if package.frequency is None:
+                continue
+            if package.frequency not in self.radio_registry.allocated_channels:
+                self.radio_registry.reserve(package.frequency)
+            for f in package.flights:
+                if (
+                    f.frequency
+                    and f.frequency not in self.radio_registry.allocated_channels
+                ):
+                    self.radio_registry.reserve(f.frequency)
+                if f.tacan and f.tacan not in self.tacan_registy.allocated_channels:
+                    self.tacan_registy.mark_unavailable(f.tacan)

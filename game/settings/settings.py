@@ -386,6 +386,14 @@ class Settings:
         min=30,
         max=150,
     )
+    desired_tanker_on_station_time: timedelta = minutes_option(
+        "Desired tanker on-station time",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=timedelta(minutes=60),
+        min=30,
+        max=150,
+    )
     # Mission specific
     max_frontline_length: int = bounded_int_option(
         "Maximum frontline length (km)",
@@ -394,6 +402,19 @@ class Settings:
         default=80,
         min=1,
         max=100,
+    )
+    opfor_autoplanner_aggressiveness: int = bounded_int_option(
+        "OPFOR autoplanner aggressiveness (%)",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=20,
+        min=0,
+        max=100,
+        detail=(
+            "Chance (larger number -> higher chance) that the OPFOR AI "
+            "autoplanner will take risks and plan flights against targets "
+            "within threatened airspace."
+        ),
     )
 
     # Performance

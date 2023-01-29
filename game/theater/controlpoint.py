@@ -22,6 +22,7 @@ from typing import (
     TYPE_CHECKING,
     Tuple,
     Type,
+    Union,
 )
 from uuid import UUID
 
@@ -40,6 +41,7 @@ from dcs.ships import (
     Hms_invincible,
 )
 from dcs.terrain.terrain import Airport, ParkingSlot
+from dcs.triggers import TriggerZone
 from dcs.unitgroup import ShipGroup, StaticGroup
 from dcs.unittype import ShipType
 
@@ -61,6 +63,7 @@ from game.theater.presetlocation import PresetLocation
 from game.utils import Distance, Heading, meters
 from .base import Base
 from .frontline import FrontLine
+from .interfaces.CTLD import CTLD
 from .missiontarget import MissionTarget
 from .theatergroundobject import (
     GenericCarrierGroundObject,
@@ -73,6 +76,10 @@ from ..data.units import UnitClass
 from ..db import Database
 from ..dcs.aircrafttype import AircraftType
 from ..dcs.groundunittype import GroundUnitType
+from ..radio.ICLSContainer import ICLSContainer
+from ..radio.Link4Container import Link4Container
+from ..radio.RadioFrequencyContainer import RadioFrequencyContainer
+from ..radio.TacanContainer import TacanContainer
 from ..utils import nautical_miles
 from ..weather import Conditions
 
@@ -305,7 +312,7 @@ class ControlPointStatus(IntEnum):
     Destroyed = auto()
 
 
-StartingPosition = ShipGroup | StaticGroup | Airport | Point
+StartingPosition = Union[ShipGroup, StaticGroup, Airport, Point]
 
 
 class ControlPoint(MissionTarget, SidcDescribable, ABC):
@@ -1042,9 +1049,13 @@ class ControlPoint(MissionTarget, SidcDescribable, ABC):
         ...
 
 
-class Airfield(ControlPoint):
+class Airfield(ControlPoint, CTLD):
     def __init__(
-        self, airport: Airport, theater: ConflictTheater, starts_blue: bool
+        self,
+        airport: Airport,
+        theater: ConflictTheater,
+        starts_blue: bool,
+        ctld_zones: Optional[List[Tuple[Point, float]]] = None,
     ) -> None:
         super().__init__(
             airport.name,
@@ -1056,6 +1067,7 @@ class Airfield(ControlPoint):
         )
         self.airport = airport
         self._runway_status = RunwayStatus()
+        self.ctld_zones = ctld_zones
 
     @property
     def dcs_airport(self) -> Airport:
@@ -1161,7 +1173,9 @@ class Airfield(ControlPoint):
         return ControlPointStatus.Functional
 
 
-class NavalControlPoint(ControlPoint, ABC):
+class NavalControlPoint(
+    ControlPoint, ABC, Link4Container, TacanContainer, ICLSContainer
+):
     @property
     def is_fleet(self) -> bool:
         return True
@@ -1392,14 +1406,20 @@ class OffMapSpawn(ControlPoint):
         return ControlPointStatus.Functional
 
 
-class Fob(ControlPoint):
+class Fob(ControlPoint, RadioFrequencyContainer, CTLD):
     def __init__(
-        self, name: str, at: Point, theater: ConflictTheater, starts_blue: bool
-    ):
+        self,
+        name: str,
+        at: Point,
+        theater: ConflictTheater,
+        starts_blue: bool,
+        ctld_zones: Optional[List[Tuple[Point, float]]] = None,
+    ) -> None:
         super().__init__(
             name, at, at, theater, starts_blue, cptype=ControlPointType.FOB
         )
         self.name = name
+        self.ctld_zones = ctld_zones
 
     @property
     def symbol_set_and_entity(self) -> tuple[SymbolSet, Entity]:
