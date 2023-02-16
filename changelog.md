@@ -7,6 +7,8 @@
 * **[Mission Generation]** Add option to configure the desired tanker on-station time in settings
 * **[Mission Generation]** Reserve GUARD frequency on VHF/UHF
 * **[Mission Generation]** Randomization in radio frequency allocation
+* **[Mission Generation]** Configurable number of Combined Arms slots
+* **[Mission Generation]** Enable spectating & F11 free camera when the "Allow external views" option is selected
 * **[Cheat Menu]** Option to instantly transfer squadrons across bases.
 * **[Modding]** Support for IDF Mod Project F-16I Sufa & F-16D v3.2 mod
 * **[UI]** Add selectable units in faction overview during campaign generation.
@@ -21,12 +23,15 @@
 * **[UI]** Configurable LINK4 for Carriers.
 * **[Kneeboard]** Show package information in Support page
 * **[Campaign Design]** Ability to define designated CTLD zones for Control Points (Airbases & FOBs/FARPs)
+* **[Campaign Design]** Ability to define preset groups for specific TGOs, given the preset group is accessible for the faction and the task matches.
 
 ## Fixes
 * **[UI]** Removed deprecated options
 * **[UI]** Add missing icon & banner for C130 Hercules mod
 * **[Mission Generation]** Avoid aircraft from being assigned to helicopter parking spots, resulting into air starts that usually crash.
 * **[Mission Generation]** Use stacking algorithm to create vertical separation between flights spawning mid-mission over their departure, usually resulting into mid-air collisions.
+* **[Mission Generation]** Fixed all callsigns being "Enfield 1-1" on dedicated servers.
+* **[Mission Generation]** Fixed AI ferry flights for helicopters when transferring to a FOB/FARP.
 
 # Retribution 1.0.1 (hotfix)
 * **[Mission Generation]** Fix serialization issue when STRIKE flight has no escorts
@@ -78,6 +83,14 @@ Saves from 6.x are not compatible with 7.0.
 ## Features/Improvements
 
 ## Fixes
+
+# 6.1.1
+
+## Fixes
+
+* **[Data]** Fixed unit ID for the KS-19 AAA. KS-19 would not previously generate correctly in missions. A new game is required for this fix to take effect.
+* **[Flight Planning]** Automatic flight planning will no longer accidentally plan a recovery tanker instead of a theater refueling package. This fixes a potential crash during mission generation when opfor plans a refueling task at a sunk carrier. You'll need to skip the current turn to force opfor to replan their flights to get the fix.
+* **[Mission Generation]** Using heliports (airports without any runways) will no longer cause mission generation to fail.
 
 # 6.1.0
 

@@ -273,6 +273,19 @@ class Settings:
         HQ_AUTOMATION_SECTION,
         default=True,
     )
+    auto_procurement_balance: int = bounded_int_option(
+        "AI ground unit procurement budget ratio (%)",
+        CAMPAIGN_MANAGEMENT_PAGE,
+        HQ_AUTOMATION_SECTION,
+        min=0,
+        max=100,
+        default=50,
+        detail=(
+            "Ratio (larger number -> more budget for ground units) "
+            "that indicates how the AI procurement planner should "
+            "spend its budget."
+        ),
+    )
     reserves_procurement_target: int = 10
 
     # Mission Generator
@@ -343,7 +356,7 @@ class Settings:
         "Player flights ignore TOT and spawn immediately",
         MISSION_GENERATOR_PAGE,
         GAMEPLAY_SECTION,
-        default=False,
+        default=True,
         detail=(
             "Does not adjust package waypoint times. Should not be used if players "
             "have runway or in-air starts."
@@ -414,6 +427,54 @@ class Settings:
             "Chance (larger number -> higher chance) that the OPFOR AI "
             "autoplanner will take risks and plan flights against targets "
             "within threatened airspace."
+        ),
+    )
+    game_masters_count: int = bounded_int_option(
+        "Number of game masters",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=1,
+        min=0,
+        max=10,
+        detail=(
+            "The number of game master slots to generate for each side. "
+            "Game masters can see, control & direct all units in the mission."
+        ),
+    )
+    tactical_commander_count: int = bounded_int_option(
+        "Number of tactical commands",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=3,
+        min=0,
+        max=10,
+        detail=(
+            "The number of tactical commander slots to generate for each side. "
+            "Tactical commanders can control & direct friendly units."
+        ),
+    )
+    jtac_count: int = bounded_int_option(
+        "Number of JTAC controllers",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=3,
+        min=0,
+        max=10,
+        detail=(
+            "The number of JTAC controller slots to generate for each side. "
+            "JTAC operators can only control friendly units."
+        ),
+    )
+    observer_count: int = bounded_int_option(
+        "Number of observers",
+        page=MISSION_GENERATOR_PAGE,
+        section=GAMEPLAY_SECTION,
+        default=0,
+        min=0,
+        max=10,
+        detail=(
+            "The number of observers slots to generate for each side. "
+            'Use this to allow spectators when disabling "Allow external views".'
         ),
     )
 

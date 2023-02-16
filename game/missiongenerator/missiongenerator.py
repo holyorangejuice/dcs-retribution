@@ -43,9 +43,6 @@ if TYPE_CHECKING:
     from game import Game
 
 
-COMBINED_ARMS_SLOTS = 3
-
-
 def country_id_from_name(name: str) -> int:
     for k, v in country_dict.items():
         if v.name == name:
@@ -69,7 +66,11 @@ class MissionGenerator:
         self.generation_started = False
 
         with open("resources/default_options.lua", "r", encoding="utf-8") as f:
-            self.mission.options.load_from_dict(dcs.lua.loads(f.read())["options"])
+            options = dcs.lua.loads(f.read())["options"]
+            ext_view = game.settings.external_views_allowed
+            options["miscellaneous"]["f11_free_camera"] = ext_view
+            options["difficulty"]["spectatorExternalViews"] = ext_view
+            self.mission.options.load_from_dict(options)
 
     def generate_miz(self, output: Path) -> UnitMap:
         if self.generation_started:
@@ -323,12 +324,11 @@ class MissionGenerator:
             gen.generate()
 
     def setup_combined_arms(self) -> None:
-        observers = 3
-        self.mission.groundControl.pilot_can_control_vehicles = COMBINED_ARMS_SLOTS > 0
-        self.mission.groundControl.blue_game_masters = 1
-        self.mission.groundControl.blue_tactical_commander = COMBINED_ARMS_SLOTS
-        self.mission.groundControl.blue_observer = observers
-        self.mission.groundControl.red_game_masters = 1
-        self.mission.groundControl.red_tactical_commander = COMBINED_ARMS_SLOTS
-        self.mission.groundControl.red_observer = observers
-        self.mission.groundControl.neutrals_observer = observers
+        settings = self.game.settings
+        commanders = settings.tactical_commander_count
+        self.mission.groundControl.pilot_can_control_vehicles = commanders > 0
+
+        self.mission.groundControl.blue_game_masters = settings.game_masters_count
+        self.mission.groundControl.blue_tactical_commander = commanders
+        self.mission.groundControl.blue_jtac = settings.jtac_count
+        self.mission.groundControl.blue_observer = settings.observer_count

@@ -27,7 +27,6 @@ import math
 import textwrap
 from collections import defaultdict
 from dataclasses import dataclass
-from itertools import groupby
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
@@ -192,7 +191,6 @@ class NumberedWaypoint:
 
 
 class FlightPlanBuilder:
-
     WAYPOINT_DESC_MAX_LEN = 25
 
     def __init__(self, start_time: datetime.datetime, units: UnitSystem) -> None:
@@ -515,6 +513,8 @@ class SupportPage(KneeboardPage):
         writer.heading(f"{package.package_description} Package{custom}")
         freq = self.format_frequency(package.frequency).replace("\n", " - ")
         writer.text(f"  FREQ: {freq}", font=writer.table_font)
+        tot = self._format_time(package.time_over_target)
+        writer.text(f"  TOT: {tot}", font=writer.table_font)
         comm_ladder = []
         for comm in self.comms:
             comm_ladder.append(
@@ -531,7 +531,7 @@ class SupportPage(KneeboardPage):
                 [
                     f.callsign,
                     str(f.flight_type),
-                    str(f.aircraft_type),
+                    KneeboardPageWriter.wrap_line(str(f.aircraft_type), 23),
                     str(len(f.units)),
                     self.format_frequency(f.intra_flight_channel),
                 ]
@@ -544,43 +544,49 @@ class SupportPage(KneeboardPage):
         aewc_ladder = []
 
         for single_aewc in self.awacs:
-
             if single_aewc.depature_location is None:
-                dep = "-"
-                arr = "-"
+                tot = "-"
+                tos = "-"
             else:
-                dep = self._format_time(single_aewc.start_time)
-                arr = self._format_time(single_aewc.end_time)
+                tot = self._format_time(single_aewc.start_time)
+                tos = self._format_duration(
+                    single_aewc.end_time - single_aewc.start_time
+                )
 
             aewc_ladder.append(
                 [
                     str(single_aewc.callsign),
                     self.format_frequency(single_aewc.freq),
                     str(single_aewc.depature_location),
-                    str(dep),
-                    str(arr),
+                    "TOT: " + tot + "\n" + "TOS: " + tos,
                 ]
             )
 
         writer.table(
             aewc_ladder,
-            headers=["Callsign", "FREQ", "Depature", "ETD", "ETA"],
+            headers=["Callsign", "FREQ", "Departure", "TOT / TOS"],
         )
 
         comm_ladder = []
         writer.heading("Tankers:")
         for tanker in self.tankers:
+            tot = self._format_time(tanker.start_time)
+            tos = self._format_duration(tanker.end_time - tanker.start_time)
             comm_ladder.append(
                 [
                     tanker.callsign,
                     "Tanker",
-                    tanker.variant,
+                    KneeboardPageWriter.wrap_line(tanker.variant, 21),
                     str(tanker.tacan),
                     self.format_frequency(tanker.freq),
+                    "TOT: " + tot + "\n" + "TOS: " + tos,
                 ]
             )
 
-        writer.table(comm_ladder, headers=["Callsign", "Task", "Type", "TACAN", "FREQ"])
+        writer.table(
+            comm_ladder,
+            headers=["Callsign", "Task", "Type", "TACAN", "FREQ", "TOT / TOS"],
+        )
 
         writer.heading("JTAC")
         jtacs = []
@@ -617,6 +623,13 @@ class SupportPage(KneeboardPage):
             return ""
         local_time = self.start_time + time
         return f"{local_time.strftime('%H:%M:%S')}{'Z' if local_time.tzinfo is not None else ''}"
+
+    @staticmethod
+    def _format_duration(time: Optional[datetime.timedelta]) -> str:
+        if time is None:
+            return ""
+        time -= datetime.timedelta(microseconds=time.microseconds)
+        return f"{time}"
 
 
 class SeadTaskPage(KneeboardPage):
