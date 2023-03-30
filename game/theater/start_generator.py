@@ -58,6 +58,7 @@ class ModSettings:
     f4bc_phantom: bool = False
     f15d_baz: bool = False
     f_16_idf: bool = False
+    fa_18efg: bool = False
     f22_raptor: bool = False
     f84g_thunderjet: bool = False
     f100_supersabre: bool = False
@@ -71,6 +72,7 @@ class ModSettings:
     frenchpack: bool = False
     high_digit_sams: bool = False
     ov10a_bronco: bool = False
+    swedishmilitaryassetspack: bool = False
 
 
 class GameGenerator:

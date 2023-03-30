@@ -2,7 +2,7 @@
 
 ## Features/Improvements
 * **[Mission Generation]** Given a CAS flight was planned, delay ground force attack until first CAS flight is on station
-* **[Mission Generation]** Add option to switch ATFLIR to LITENING automatically for ground based F-18C flights
+* **[Mission Generation]** Add option to switch ATFLIR to LITENING automatically for ground based F/A-18C flights
 * **[Mission Generation]** Add option to configure OPFOR autoplanner aggressiveness and have the AI take risks and plan missions against defended targets
 * **[Mission Generation]** Add option to configure the desired tanker on-station time in settings
 * **[Mission Generation]** Reserve GUARD frequency on VHF/UHF
@@ -11,6 +11,8 @@
 * **[Mission Generation]** Enable spectating & F11 free camera when the "Allow external views" option is selected
 * **[Cheat Menu]** Option to instantly transfer squadrons across bases.
 * **[Modding]** Support for IDF Mod Project F-16I Sufa & F-16D v3.2 mod
+* **[Modding]** Support for F/A-18E/F/G mod version 2.1
+* **[Modding]** Support for Swedish Military Assets for DCS by Currenthill Version 1.10
 * **[UI]** Add selectable units in faction overview during campaign generation.
 * **[UI]** Add button to rename pilots in Air Wing's Squadron dialog.
 * **[UI]** Add clone buttons for flights & packages.
@@ -29,6 +31,7 @@
 * **[Campaign Management]** Additional options for automated budget management.
 * **[Campaign Management]** New options to allow more control of randomized flight sizes (applicable for BARCAP/CAS/OCA/ANTI-SHIP).
 * **[Plugins]** Updated Splash Damage script to v2.0 by RotorOps.
+* **[Mission Generation]** Improvements to DEAD & STRIKE flights, allowing AI to handle a larger variety of weapons.
 
 ## Fixes
 * **[UI]** Removed deprecated options
@@ -38,6 +41,10 @@
 * **[Mission Generation]** Fixed all callsigns being "Enfield 1-1" on dedicated servers.
 * **[Mission Generation]** Fixed AI ferry flights for helicopters when transferring to a FOB/FARP.
 * **[Mission Generation]** Fixed 'Uninitialized flight' exception when adding flights after aborted take-off.
+* **[Modding]** Fixed conflicts caused by HDS units
+* **[UX]** Gracefully handle corrupted preferences file.
+* **[Mission Generation]** Aircraft not using decoys during SEAD.
+* **[Campaign]** New campaign (1968 Yankee Station) by Adecarcer
 
 # Retribution 1.0.1 (hotfix)
 * **[Mission Generation]** Fix serialization issue when STRIKE flight has no escorts
@@ -87,6 +94,15 @@ BAI/ANTISHIP/DEAD/STRIKE/BARCAP/CAS/OCA/AIR-ASSAULT (main) missions
 Saves from 6.x are not compatible with 7.0.
 
 ## Features/Improvements
+
+* **[Engine]** Support for DCS 2.8.3.37556.
+* **[Engine]** Saved games are now a zip file of save assets for easier bug reporting. The new extension is .liberation.zip. Drag and drop that file into bug reports.
+* **[Flight Planning]** Package TOT and composition can be modified after advancing time in Liberation.
+* **[Mission Generation]** Units on the front line are now hidden on MFDs.
+* **[Mission Generation]** Preset radio channels will now be configured for both A-10C modules.
+* **[Mission Generation]** Both A-10C modules now use separate radios for inter- and intra-flight comms (similar to other modern aircraft).
+* **[Modding]** Updated Community A-4E-C mod version support to 2.1.0 release.
+* **[Modding]** Add support for VSN F-4B and F-4C mod.
 
 ## Fixes
 

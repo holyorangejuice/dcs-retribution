@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 
 import logging
-import math
+from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import List
 
@@ -16,13 +16,11 @@ from PySide2.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
-    QSizePolicy,
 )
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from game.campaignloader.campaign import Campaign, DEFAULT_BUDGET
 from game.dcs.aircrafttype import AircraftType
-from game.dcs.unittype import UnitType
 from game.factions import FACTIONS, Faction
 from game.settings import Settings
 from game.theater.start_generator import GameGenerator, GeneratorSettings, ModSettings
@@ -181,6 +179,7 @@ class NewGameWizard(QtWidgets.QWizard):
             f4bc_phantom=self.field("f4bc_phantom"),
             f15d_baz=self.field("f15d_baz"),
             f_16_idf=self.field("f_16_idf"),
+            fa_18efg=self.field("fa_18efg"),
             f22_raptor=self.field("f22_raptor"),
             f84g_thunderjet=self.field("f84g_thunderjet"),
             f100_supersabre=self.field("f100_supersabre"),
@@ -194,6 +193,7 @@ class NewGameWizard(QtWidgets.QWizard):
             ov10a_bronco=self.field("ov10a_bronco"),
             frenchpack=self.field("frenchpack"),
             high_digit_sams=self.field("high_digit_sams"),
+            swedishmilitaryassetspack=self.field("swedishmilitaryassetspack"),
         )
 
         blue_faction = self.faction_selection_page.selected_blue_faction
@@ -464,18 +464,19 @@ class FactionSelection(QtWidgets.QWizardPage):
 
     @staticmethod
     def _filter_selected_units(qfu: QFactionUnits) -> Faction:
-        qfu.updateFactionUnits(qfu.faction.aircrafts)
-        qfu.updateFactionUnits(qfu.faction.awacs)
-        qfu.updateFactionUnits(qfu.faction.tankers)
-        qfu.updateFactionUnits(qfu.faction.frontline_units)
-        qfu.updateFactionUnits(qfu.faction.artillery_units)
-        qfu.updateFactionUnits(qfu.faction.logistics_units)
-        qfu.updateFactionUnits(qfu.faction.infantry_units)
-        qfu.updateFactionUnits(qfu.faction.preset_groups)
-        qfu.updateFactionUnits(qfu.faction.air_defense_units)
-        qfu.updateFactionUnits(qfu.faction.naval_units)
-        qfu.updateFactionUnits(qfu.faction.missiles)
-        return qfu.faction
+        fac = deepcopy(qfu.faction)
+        qfu.updateFactionUnits(fac.aircrafts)
+        qfu.updateFactionUnits(fac.awacs)
+        qfu.updateFactionUnits(fac.tankers)
+        qfu.updateFactionUnits(fac.frontline_units)
+        qfu.updateFactionUnits(fac.artillery_units)
+        qfu.updateFactionUnits(fac.logistics_units)
+        qfu.updateFactionUnits(fac.infantry_units)
+        qfu.updateFactionUnits(fac.preset_groups)
+        qfu.updateFactionUnits(fac.air_defense_units)
+        qfu.updateFactionUnits(fac.naval_units)
+        qfu.updateFactionUnits(fac.missiles)
+        return fac
 
     @property
     def selected_blue_faction(self) -> Faction:
@@ -813,6 +814,8 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("f15d_baz", f15d_baz)
         f_16_idf = QtWidgets.QCheckBox()
         self.registerField("f_16_idf", f_16_idf)
+        fa_18efg = QtWidgets.QCheckBox()
+        self.registerField("fa_18efg", fa_18efg)
         f22_raptor = QtWidgets.QCheckBox()
         self.registerField("f22_raptor", f22_raptor)
         f84g_thunderjet = QtWidgets.QCheckBox()
@@ -835,6 +838,8 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("frenchpack", frenchpack)
         high_digit_sams = QtWidgets.QCheckBox()
         self.registerField("high_digit_sams", high_digit_sams)
+        swedishmilitaryassetspack = QtWidgets.QCheckBox()
+        self.registerField("swedishmilitaryassetspack", swedishmilitaryassetspack)
 
         modHelpText = QtWidgets.QLabel(
             "<p>Select the mods you have installed. If your chosen factions support them, you'll be able to use these mods in your campaign.</p>"
@@ -851,6 +856,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("F-4B/C Phantom II (v2.8.1.01 Standalone + 29Jan23 Patch)", f4bc_phantom),
             ("F-15D Baz (v1.0)", f15d_baz),
             ("F-16I Sufa & F-16D (v3.2 by IDF Mods Project)", f_16_idf),
+            ("F/A-18E/F/G Super Hornet (version 2.1)", fa_18efg),
             ("F-22A Raptor", f22_raptor),
             ("F-84G Thunderjet (v2.5.7.01)", f84g_thunderjet),
             ("F-100 Super Sabre (v2.7.18.30765 patch 20.10.22)", f100_supersabre),
@@ -858,6 +864,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("F-105 Thunderchief (v2.7.12.23x)", f105_thunderchief),
             ("Frenchpack", frenchpack),
             ("High Digit SAMs", high_digit_sams),
+            ("Swedish Military Assets pack (1.10)", swedishmilitaryassetspack),
             ("JAS 39 Gripen (v1.8.0-beta)", jas39_gripen),
             ("OV-10A Bronco", ov10a_bronco),
             ("Su-30 Flanker-H (V2.01B)", su30_flanker_h),
