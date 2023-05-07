@@ -56,10 +56,11 @@ class Campaign:
     data: Dict[str, Any]
     path: Path
     advanced_iads: bool
+    settings: Dict[str, Any]
 
     @classmethod
     def from_file(cls, path: Path) -> Campaign:
-        with path.open() as campaign_file:
+        with path.open(encoding="utf-8") as campaign_file:
             data = yaml.safe_load(campaign_file)
 
         sanitized_theater = data["theater"].replace(" ", "")
@@ -108,6 +109,7 @@ class Campaign:
             data,
             path,
             data.get("advanced_iads", False),
+            data.get("settings", {}),
         )
 
     def load_theater(self, advanced_iads: bool) -> ConflictTheater:

@@ -56,13 +56,15 @@ class Flight(SidcDescribable, RadioFrequencyContainer, TacanContainer):
         frequency: Optional[RadioFrequency] = None,
         channel: Optional[TacanChannel] = None,
         callsign: Optional[str] = None,
+        claim_inv: bool = True,
     ) -> None:
         self.id = uuid.uuid4()
         self.package = package
         self.country = country
         self.coalition = squadron.coalition
         self.squadron = squadron
-        self.squadron.claim_inventory(count)
+        if claim_inv:
+            self.squadron.claim_inventory(count)
         if roster is None:
             self.roster = FlightRoster(self.squadron, initial_size=count)
         else:
@@ -79,6 +81,8 @@ class Flight(SidcDescribable, RadioFrequencyContainer, TacanContainer):
         if self.unit_type.dcs_unit_type.tacan:
             self.tacan = channel
             self.tcn_name = callsign
+
+        self.initialize_fuel()
 
         # Only used by transport missions.
         self.cargo = cargo
@@ -200,23 +204,32 @@ class Flight(SidcDescribable, RadioFrequencyContainer, TacanContainer):
     def missing_pilots(self) -> int:
         return self.roster.missing_pilots
 
+    def set_flight_type(self, var: FlightType) -> None:
+        self.flight_type = var
+
+        # Update _flight_plan_builder so that the builder class remains relevant
+        # to the flight type
+        from .flightplans.flightplanbuildertypes import FlightPlanBuilderTypes
+
+        self._flight_plan_builder = FlightPlanBuilderTypes.for_flight(self)(self)
+
     def return_pilots_and_aircraft(self) -> None:
         self.roster.clear()
         self.squadron.claim_inventory(-self.count)
 
-    def max_takeoff_fuel(self) -> Optional[float]:
-        # Special case so Su 33 and C101 can take off
+    def initialize_fuel(self) -> None:
         unit_type = self.unit_type.dcs_unit_type
+        self.fuel = unit_type.fuel_max
+        # Special cases where we want less fuel for takeoff
         if unit_type == Su_33:
             if self.flight_type.is_air_to_air:
-                return Su_33.fuel_max / 2.2
+                self.fuel = Su_33.fuel_max / 2.2
             else:
-                return Su_33.fuel_max * 0.8
+                self.fuel = Su_33.fuel_max * 0.8
         elif unit_type in {C_101EB, C_101CC}:
-            return unit_type.fuel_max * 0.5
+            self.fuel = unit_type.fuel_max * 0.5
         elif unit_type == Hercules:
-            return unit_type.fuel_max * 0.75
-        return None
+            self.fuel = unit_type.fuel_max * 0.75
 
     def __repr__(self) -> str:
         return self.__str__()

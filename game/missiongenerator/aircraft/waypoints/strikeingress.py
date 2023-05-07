@@ -5,7 +5,7 @@ from dcs.planes import B_17G, B_52H, Tu_22M3, B_1B
 from dcs.point import MovingPoint
 from dcs.task import Bombing, Expend, OptFormation, WeaponType, CarpetBombing
 
-from game.utils import mach
+from game.utils import mach, meters
 from .pydcswaypointbuilder import PydcsWaypointBuilder
 
 
@@ -13,12 +13,13 @@ class StrikeIngressBuilder(PydcsWaypointBuilder):
     def add_tasks(self, waypoint: MovingPoint) -> None:
         bomber = self.group.units[0].unit_type in [B_17G, Tu_22M3]
         bomber_guided = self.group.units[0].unit_type in [B_1B, B_52H]
-        waypoint.tasks.append(OptFormation.trail_open())
+        waypoint.tasks.append(OptFormation.finger_four_open())
         if bomber_guided or not bomber:
             self.add_strike_tasks(waypoint, WeaponType.Guided)
 
         waypoint.tasks.append(OptFormation.ww2_bomber_element_close())
         self.add_bombing_tasks(waypoint)
+        waypoint.tasks.append(OptFormation.finger_four_open())
 
     def add_bombing_tasks(self, waypoint: MovingPoint) -> None:
         targets = self.waypoint.targets
@@ -38,7 +39,7 @@ class StrikeIngressBuilder(PydcsWaypointBuilder):
             weapon_type=WeaponType.Bombs,
             expend=Expend.All,
             carpet_length=avg_spacing,
-            altitude=round(self.flight.coalition.doctrine.ingress_altitude.meters),
+            altitude=waypoint.alt,
         )
         waypoint.tasks.append(bombing)
 
@@ -53,8 +54,7 @@ class StrikeIngressBuilder(PydcsWaypointBuilder):
                 bombing.params["expend"] = Expend.All.value
             waypoint.tasks.append(bombing)
 
-            doctrine = self.flight.coalition.doctrine
-            waypoint.speed = mach(0.85, doctrine.ingress_altitude).meters_per_second
+            waypoint.speed = mach(0.85, meters(waypoint.alt)).meters_per_second
 
             # Register special waypoints
             self.register_special_waypoints(self.waypoint.targets)

@@ -25,6 +25,7 @@ class Migrator:
         self._update_package_attributes()
         self._update_control_points()
         self._update_flights()
+        self._release_untasked_flights()
 
     def _update_doctrine(self) -> None:
         doctrines = [
@@ -47,8 +48,8 @@ class Migrator:
     def _update_packagewaypoints(self) -> None:
         for c in self.game.coalitions:
             for p in c.ato.packages:
-                if p.flights:
-                    try_set_attr(p.waypoints, "initial", PackageWaypoints.create(p, c))
+                if p.waypoints:
+                    try_set_attr(p.waypoints, "initial", None)
 
     def _update_package_attributes(self) -> None:
         for c in self.game.coalitions:
@@ -76,3 +77,14 @@ class Migrator:
             try_set_attr(f, "frequency")
             try_set_attr(f, "tacan")
             try_set_attr(f, "tcn_name")
+            try_set_attr(f, "fuel", f.unit_type.max_fuel)
+
+    def _release_untasked_flights(self) -> None:
+        for cp in self.game.theater.controlpoints:
+            for s in cp.squadrons:
+                claimed = s.owned_aircraft - s.untasked_aircraft
+                count = 0
+                for f in s.flight_db.objects.values():
+                    if f.squadron == s:
+                        count += f.count
+                s.claim_inventory(count - claimed)

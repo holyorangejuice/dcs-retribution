@@ -379,6 +379,8 @@ class Faction:
             self.remove_aircraft("Su-57")
         if not mod_settings.ov10a_bronco:
             self.remove_aircraft("Bronco-OV-10A")
+        if not mod_settings.a7e_corsair2:
+            self.remove_aircraft("A-7E")
         # frenchpack
         if not mod_settings.frenchpack:
             self.remove_vehicle("AMX10RCR")
@@ -475,6 +477,37 @@ class Faction:
             self.remove_ship("HSwMS_Visby")
             self.remove_ship("Strb90")
             self.remove_aircraft("HKP15B")
+        # SWPack
+        if not mod_settings.SWPack:
+            self.remove_aircraft("AWINGA")
+            self.remove_aircraft("AWING")
+            self.remove_aircraft("XWING")
+            self.remove_aircraft("XWINGAI")
+            self.remove_aircraft("TIE_BA")
+            self.remove_aircraft("tie_bomber_2")
+            self.remove_aircraft("YWINGA")
+            self.remove_aircraft("YWING")
+            self.remove_aircraft("CORVETTE")
+            self.remove_aircraft("CORVETTEA")
+            self.remove_aircraft("FAUCON")
+            self.remove_aircraft("FAUCON_AI")
+            self.remove_aircraft("TIE")
+            self.remove_aircraft("TIE_AI")
+            self.remove_aircraft("HUNTER")
+            self.remove_aircraft("HUNTERA")
+            self.remove_aircraft("TIE_INTER")
+            self.remove_aircraft("TIE_INTERA")
+            self.remove_aircraft("naboo_starfighter")
+            self.remove_aircraft("naboo_starfighter_AI")
+            self.remove_vehicle("MBT9_REBEL")
+            self.remove_vehicle("MBT9_AAA EMPIRE")
+            self.remove_vehicle("MBT9_EMPIRE")
+            self.remove_vehicle("MBT9_AAA REBEL")
+            self.remove_vehicle("Jugger")
+            self.remove_vehicle("TB_TT")
+            self.remove_vehicle("TR_TT")
+            self.remove_vehicle("Gozanti")
+            self.remove_ship("Destroyer_carrier")
 
     def remove_aircraft(self, name: str) -> None:
         for i in self.aircrafts:
