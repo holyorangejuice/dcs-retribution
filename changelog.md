@@ -3,6 +3,9 @@
 ## Features/Improvements
 * **[Preset Groups]** Add SA-2 with ZSU-23/57
 * **[Campaign Design]** Ability to define almost all possible settings in the campaign's yaml file.
+* **[Campaign Design]** Ability to add roadbases and/or ground spawns to campaigns.
+* **[Campaign Design]** Ability to define SCENERY REMOVE OBJECTS ZONE triggers with the roadbase objects in campaign miz. This might not work reliably in multiplayer due to DCS issues. FARPs can be used to remove scenery objects in multiplayer.
+* **[Campaign Management]** Improved squadron retreat logic at longer ranges.
 * **[Options]** Ability to load & save your settings.
 * **[UI]** Added fuel selector in flight's edit window.
 * **[Plugins]** Expose Splash Damage's "game_messages" option and set its default to false.
@@ -28,6 +31,8 @@
 * **[Campaign Design]** Ability to define "spawn-routes" for convoys, allowing them to start from the road without having to edit the mission
 * **[Plugins]** Added "DCS Dismount" plugin.
 * **[Plugins]** Added "EWR Jammer" plugin (only for humans, may change in the future).
+* **[Campaign]** New campaign (Operation Desert Sabre) by Chimiste
+* **[Plugins]** Updated CTLD to latest released version
 
 ## Fixes
 * **[New Game Wizard]** Settings would not persist when going back to a previous page (obsolete due to overhaul).
@@ -82,6 +87,7 @@
 * **[Campaign Management]** New options to allow more control of randomized flight sizes (applicable for BARCAP/CAS/OCA/ANTI-SHIP).
 * **[Plugins]** Updated Splash Damage script to v2.0 by RotorOps.
 * **[Mission Generation]** Improvements to DEAD & STRIKE flights, allowing AI to handle a larger variety of weapons.
+* **[Campaign]** New campaign (1968 Yankee Station) by Adecarcer
 
 ## Fixes
 * **[UI]** Removed deprecated options
@@ -94,7 +100,6 @@
 * **[Modding]** Fixed conflicts caused by HDS units
 * **[UX]** Gracefully handle corrupted preferences file.
 * **[Mission Generation]** Aircraft not using decoys during SEAD.
-* **[Campaign]** New campaign (1968 Yankee Station) by Adecarcer
 
 # Retribution v1.0.1 (hotfix)
 * **[Mission Generation]** Fix serialization issue when STRIKE flight has no escorts
@@ -140,6 +145,29 @@ BAI/ANTISHIP/DEAD/STRIKE/BARCAP/CAS/OCA/AIR-ASSAULT (main) missions
 
 
 # Liberation:
+## Features/Improvements
+
+* **[Engine]** Support for DCS 2.8.6.41363, including F-15E support.
+
+## Fixes
+
+# 8.0.0
+
+Saves from 7.x are not compatible with 8.0.
+
+## Features/Improvements
+
+* **[Engine]** Support for DCS 2.8.6.41066, including the new Sinai map.
+* **[UI]** Limited size of overfull airbase display and added scrollbar.
+* **[UI]** Waypoint altitudes can be edited in Waypoints tab of Edit Flight window.
+* **[UI]** Moved air wing and transfer menus to the toolbar to improve UI fit on low resolution displays.
+* **[UI]** Added basic game over dialog.
+
+## Fixes
+
+* **[Campaign]** Fix bug introduced in 7.0 where map strike target deaths are no longer tracked.
+* **[Mission Generation]** Fix crash during mission generation caused by out of date DCS data for the Gazelle.
+* **[Mission Generation]** Fix crash during mission generation when DCS beacon data is inconsistent.
 
 # 7.1.0
 

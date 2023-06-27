@@ -3,9 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from dcs.countries import countries_by_name
+
 from game.ato.packagewaypoints import PackageWaypoints
 from game.data.doctrine import MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE
-from game.theater import SeasonalConditions
+from game.theater import ParkingType, SeasonalConditions
 
 if TYPE_CHECKING:
     from game import Game
@@ -23,9 +24,9 @@ class Migrator:
 
     def _migrate_game(self) -> None:
         self._update_doctrine()
+        self._update_control_points()
         self._update_packagewaypoints()
         self._update_package_attributes()
-        self._update_control_points()
         self._update_factions()
         self._update_flights()
         self._update_squadrons()
@@ -77,6 +78,10 @@ class Migrator:
                 try_set_attr(cp, "icls_name")
                 try_set_attr(cp, "link4")
             try_set_attr(cp, "convoy_spawns", {})
+            try_set_attr(cp, "ground_spawns", [])
+            try_set_attr(cp, "ground_spawns_roadbase", [])
+            try_set_attr(cp, "helipads_quad", [])
+            try_set_attr(cp, "helipads_invisible", [])
 
     def _update_flights(self) -> None:
         for f in self.game.db.flights.objects.values():
@@ -110,9 +115,13 @@ class Migrator:
                     s.country = countries_by_name[c]()
 
                 # code below is used to fix corruptions wrt overpopulation
-                if s.owned_aircraft < 0 or s.location.unclaimed_parking() < 0:
+                parking_type = ParkingType().from_squadron(s)
+                if (
+                    s.owned_aircraft < 0
+                    or s.location.unclaimed_parking(parking_type) < 0
+                ):
                     s.owned_aircraft = max(
-                        0, s.location.unclaimed_parking() + s.owned_aircraft
+                        0, s.location.unclaimed_parking(parking_type) + s.owned_aircraft
                     )
 
     def _update_factions(self) -> None:
