@@ -80,6 +80,17 @@ def settings_dir() -> Path:
     return base_path() / "Retribution" / "Settings"
 
 
+def payloads_dir(backup: bool = False) -> Path:
+    payloads = base_path() / "MissionEditor" / "UnitPayloads"
+    if backup:
+        return payloads / "_retribution_backups"
+    return payloads
+
+
+def user_custom_weapon_injections_dir() -> Path:
+    return base_path() / "Retribution" / "WeaponInjections"
+
+
 def save_dir() -> Path:
     return base_path() / "Retribution" / "Saves"
 

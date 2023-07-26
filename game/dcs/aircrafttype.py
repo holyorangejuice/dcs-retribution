@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
@@ -11,10 +12,12 @@ import yaml
 from dcs.helicopters import helicopter_map
 from dcs.planes import plane_map
 from dcs.unittype import FlyingType
+from dcs.weapons_data import weapon_ids
 
 from game.data.units import UnitClass
 from game.dcs.unitproperty import UnitProperty
 from game.dcs.unittype import UnitType
+from game.persistency import user_custom_weapon_injections_dir
 from game.radio.channels import (
     ApacheChannelNamer,
     ChannelNamer,
@@ -462,6 +465,9 @@ class AircraftType(UnitType[Type[FlyingType]]):
         if FlightType.SEAD in task_priorities:
             task_priorities[FlightType.SEAD_SWEEP] = task_priorities[FlightType.SEAD]
 
+        cls._custom_weapon_injections(aircraft, data)
+        cls._user_weapon_injections(aircraft)
+
         for variant in data.get("variants", [aircraft.id]):
             yield AircraftType(
                 dcs_unit_type=aircraft,
@@ -496,6 +502,36 @@ class AircraftType(UnitType[Type[FlyingType]]):
                 has_built_in_target_pod=data.get("has_built_in_target_pod", False),
                 task_priorities=task_priorities,
             )
+
+    @staticmethod
+    def _custom_weapon_injections(
+        aircraft: Type[FlyingType], data: Dict[str, Any]
+    ) -> None:
+        if (wpn_injection := data.get("weapon_injections")) is not None:
+            pylons = [
+                v
+                for v in aircraft.__dict__.values()
+                if inspect.isclass(v) and v.__name__.startswith(f"Pylon")
+            ]
+            pylons.sort(key=lambda x: int(x.__name__.replace("Pylon", "")))
+            for pylon_number, weapons in wpn_injection.items():
+                for w in weapons:
+                    weapon = weapon_ids[w]
+                    pylon = [
+                        pylon
+                        for pylon in pylons
+                        if int(pylon.__name__.replace("Pylon", "")) == pylon_number
+                    ][0]
+                    setattr(pylon, w, (pylon_number, weapon))
+
+    @staticmethod
+    def _user_weapon_injections(aircraft: Type[FlyingType]) -> None:
+        data_path = user_custom_weapon_injections_dir() / f"{aircraft.id}.yaml"
+        if not data_path.exists():
+            return
+        with data_path.open(encoding="utf-8") as data_file:
+            data = yaml.safe_load(data_file)
+        AircraftType._custom_weapon_injections(aircraft, data)
 
     def __hash__(self) -> int:
         return hash(self.name)
