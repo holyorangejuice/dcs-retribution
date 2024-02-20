@@ -2,9 +2,9 @@ from __future__ import unicode_literals
 
 from datetime import timedelta
 
-from PySide2 import QtWidgets, QtGui
-from PySide2.QtCore import Qt
-from PySide2.QtWidgets import QLabel, QVBoxLayout
+from PySide6 import QtWidgets, QtGui
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QLabel, QVBoxLayout
 
 from game.campaignloader import Campaign
 from game.campaignloader.campaign import DEFAULT_BUDGET
@@ -21,7 +21,7 @@ class BudgetInputs(QtWidgets.QGridLayout):
         minimum = 0
         maximum = 5000
 
-        slider = QtWidgets.QSlider(Qt.Horizontal)
+        slider = QtWidgets.QSlider(Qt.Orientation.Horizontal)
         slider.setMinimum(minimum)
         slider.setMaximum(maximum)
         slider.setValue(value)
@@ -40,7 +40,7 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.setTitle("Generator settings")
         self.setSubTitle("\nOptions affecting the generation of the game.")
         self.setPixmap(
-            QtWidgets.QWizard.LogoPixmap,
+            QtWidgets.QWizard.WizardPixmap.LogoPixmap,
             QtGui.QPixmap("./resources/ui/wizard/logo1.png"),
         )
 
@@ -108,6 +108,8 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         self.registerField("f_16_idf", self.f_16_idf)
         self.fa_18efg = QtWidgets.QCheckBox()
         self.registerField("fa_18efg", self.fa_18efg)
+        self.fa18ef_tanker = QtWidgets.QCheckBox()
+        self.registerField("fa18ef_tanker", self.fa18ef_tanker)
         self.f22_raptor = QtWidgets.QCheckBox()
         self.registerField("f22_raptor", self.f22_raptor)
         self.f84g_thunderjet = QtWidgets.QCheckBox()
@@ -142,24 +144,22 @@ class GeneratorOptions(QtWidgets.QWizardPage):
         modHelpText = QtWidgets.QLabel(
             "<p>Select the mods you have installed. If your chosen factions support them, you'll be able to use these mods in your campaign.</p>"
         )
-        modHelpText.setAlignment(Qt.AlignCenter)
+        modHelpText.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         modLayout = QtWidgets.QGridLayout()
         modLayout_row = 1
 
         mod_pairs = [
-            ("A-4E Skyhawk (v2.1.0)", self.a4_skyhawk),
+            ("A-4E Skyhawk (v2.2.0)", self.a4_skyhawk),
             ("A-6A Intruder (v2.7.5.01)", self.a6a_intruder),
             ("A-7E Corsair II", self.a7e_corsair2),
             ("C-130J-30 Super Hercules", self.hercules),
-            (
-                "F-4B/C Phantom II (v2.8.1.01 Standalone + 29Jan23 Patch)",
-                self.f4bc_phantom,
-            ),
+            ("F-4B/C Phantom II (2.8.7.204)", self.f4bc_phantom),
             ("F-15D Baz (v1.0)", self.f15d_baz),
             ("F-15I Ra'am (v1.0 by IDF Mods Project)", self.f_15_idf),
             ("F-16I Sufa & F-16D (v3.6 by IDF Mods Project)", self.f_16_idf),
             ("F/A-18E/F/G Super Hornet (version 2.1)", self.fa_18efg),
+            ("F/A-18E/F Super Hornet AI Tanker (version 1.4)", self.fa18ef_tanker),
             ("F-22A Raptor", self.f22_raptor),
             ("F-84G Thunderjet (v2.5.7.01)", self.f84g_thunderjet),
             ("F-100 Super Sabre (v2.7.18.30765 patch 20.10.22)", self.f100_supersabre),
@@ -170,12 +170,12 @@ class GeneratorOptions(QtWidgets.QWizardPage):
             ("Swedish Military Assets pack (1.10)", self.swedishmilitaryassetspack),
             ("JAS 39 Gripen (v1.8.5-beta)", self.jas39_gripen),
             ("OV-10A Bronco", self.ov10a_bronco),
-            ("Su-30 Flanker-H (V2.01B)", self.su30_flanker_h),
-            ("Su-57 Felon", self.su57_felon),
+            ("Su-30 Flanker-H (V2.7.3  beta)", self.su30_flanker_h),
+            ("Su-57 Felon (build-04)", self.su57_felon),
             ("UH-60L Black Hawk (v1.3.1)", self.uh_60l),
             ("Star Wars Modpack 2.54+", self.SWPack),
             ("Spanish Naval Assets pack (desdemicabina 3.2.0)", self.spanishnavypack),
-            ("Iron Dome (v1.2 by IDF Mods Project)", self.irondome),
+            ("IDF Assets Pack (v1.1 by IDF Mods Project)", self.irondome),
         ]
 
         for i in range(len(mod_pairs)):

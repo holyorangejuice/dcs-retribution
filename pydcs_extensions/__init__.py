@@ -9,9 +9,10 @@ from .f15d import *
 from .f15i_idf import *
 from .f16i_idf import *
 from .f22a import *
-from .f4b import *
+from .f4 import *
 from .f84g import *
 from .fa18efg import *
+from .fa18ef_tanker import *
 from .frenchpack import *
 from .hercules import *
 from .highdigitsams import *

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from datetime import datetime
 from typing import Dict, Iterable, Optional, Set, TYPE_CHECKING
 
 from game.ato.airtaaskingorder import AirTaskingOrder
@@ -82,11 +83,14 @@ class PackageFulfiller:
         purchase_multiplier: int,
     ) -> None:
         if not builder.plan_flight(flight):
+            pf = builder.package.primary_flight
+            heli = pf.is_helo if pf else False
             missing_types.add(flight.task)
             purchase_order = AircraftProcurementRequest(
                 near=mission.location,
                 task_capability=flight.task,
                 number=flight.num_aircraft * purchase_multiplier,
+                heli=heli,
             )
             # Reserves are planned for critical missions, so prioritize those orders
             # over aircraft needed for non-critical missions.
@@ -132,6 +136,7 @@ class PackageFulfiller:
         self,
         mission: ProposedMission,
         purchase_multiplier: int,
+        now: datetime,
         tracer: MultiEventTracer,
     ) -> Optional[Package]:
         """Allocates aircraft for a proposed mission and adds it to the ATO."""
@@ -139,6 +144,7 @@ class PackageFulfiller:
             mission.location,
             ObjectiveDistanceCache.get_closest_airfields(mission.location),
             self.air_wing,
+            self.coalition.laser_code_registry,
             self.flight_db,
             self.is_player,
             self.default_start_type,
@@ -151,17 +157,17 @@ class PackageFulfiller:
         missing_types: Set[FlightType] = set()
         escorts = []
         for proposed_flight in mission.flights:
+            if proposed_flight.escort_type is not None:
+                # Escorts are planned after the primary elements of the package.
+                # If the package does not need escorts they may be pruned.
+                escorts.append(proposed_flight)
+                continue
             if not self.air_wing_can_plan(proposed_flight.task):
                 # This air wing can never plan this mission type because they do not
                 # have compatible aircraft or squadrons. Skip fulfillment so that we
                 # don't place the purchase request.
                 missing_types.add(proposed_flight.task)
                 break
-            if proposed_flight.escort_type is not None:
-                # Escorts are planned after the primary elements of the package.
-                # If the package does not need escorts they may be pruned.
-                escorts.append(proposed_flight)
-                continue
             with tracer.trace("Flight planning"):
                 self.plan_flight(
                     mission,
@@ -221,6 +227,6 @@ class PackageFulfiller:
 
         if package.has_players and self.player_missions_asap:
             package.auto_asap = True
-            package.set_tot_asap()
+            package.set_tot_asap(now)
 
         return package

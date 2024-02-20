@@ -1,7 +1,7 @@
 import os
 
-from PySide2.QtGui import Qt
-from PySide2.QtWidgets import (
+from PySide6.QtGui import Qt
+from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
     QFrame,
@@ -11,6 +11,8 @@ from PySide2.QtWidgets import (
     QMessageBox,
     QPushButton,
     QVBoxLayout,
+    QCheckBox,
+    QSpinBox,
 )
 
 from qt_ui import liberation_install, liberation_theme
@@ -40,6 +42,14 @@ class QLiberationPreferences(QFrame):
         self.themeSelect = QComboBox()
         [self.themeSelect.addItem(y["themeName"]) for x, y in THEMES.items()]
 
+        preference = liberation_install.prefer_liberation_payloads()
+        self.prefer_liberation_payloads = preference if preference else False
+        self.payloads_cb = QCheckBox()
+        self.payloads_cb.setChecked(self.prefer_liberation_payloads)
+
+        self.port = liberation_install.server_port()
+        self.port_input = QSpinBox()
+
         self.initUi()
 
     def initUi(self):
@@ -49,21 +59,48 @@ class QLiberationPreferences(QFrame):
             QLabel("<strong>DCS saved game directory:</strong>"),
             0,
             0,
-            alignment=Qt.AlignLeft,
+            alignment=Qt.AlignmentFlag.AlignLeft,
         )
-        layout.addWidget(self.edit_saved_game_dir, 1, 0, alignment=Qt.AlignRight)
-        layout.addWidget(self.browse_saved_game, 1, 1, alignment=Qt.AlignRight)
+        layout.addWidget(
+            self.edit_saved_game_dir, 1, 0, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        layout.addWidget(
+            self.browse_saved_game, 1, 1, alignment=Qt.AlignmentFlag.AlignRight
+        )
         layout.addWidget(
             QLabel("<strong>DCS installation directory:</strong>"),
             2,
             0,
-            alignment=Qt.AlignLeft,
+            alignment=Qt.AlignmentFlag.AlignLeft,
         )
-        layout.addWidget(self.edit_dcs_install_dir, 3, 0, alignment=Qt.AlignRight)
-        layout.addWidget(self.browse_install_dir, 3, 1, alignment=Qt.AlignRight)
+        layout.addWidget(
+            self.edit_dcs_install_dir, 3, 0, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        layout.addWidget(
+            self.browse_install_dir, 3, 1, alignment=Qt.AlignmentFlag.AlignRight
+        )
         layout.addWidget(QLabel("<strong>Theme (Requires Restart)</strong>"), 4, 0)
-        layout.addWidget(self.themeSelect, 4, 1, alignment=Qt.AlignRight)
+        layout.addWidget(self.themeSelect, 4, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.themeSelect.setCurrentIndex(get_theme_index())
+
+        layout.addWidget(
+            QLabel("<strong>Prefer custom Liberation payloads:</strong>"),
+            5,
+            0,
+            alignment=Qt.AlignmentFlag.AlignLeft,
+        )
+        layout.addWidget(self.payloads_cb, 5, 1, alignment=Qt.AlignmentFlag.AlignRight)
+
+        layout.addWidget(
+            QLabel("<strong>Server port (restart required):</strong>"),
+            6,
+            0,
+            alignment=Qt.AlignmentFlag.AlignLeft,
+        )
+        layout.addWidget(self.port_input, 6, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.port_input.setRange(1, 2**16 - 1)
+        self.port_input.setValue(self.port)
+        self.port_input.setStyleSheet("QSpinBox{ width: 50 }")
 
         main_layout.addLayout(layout)
         main_layout.addStretch()
@@ -90,6 +127,8 @@ class QLiberationPreferences(QFrame):
         print("Applying changes")
         self.saved_game_dir = self.edit_saved_game_dir.text()
         self.dcs_install_dir = self.edit_dcs_install_dir.text()
+        self.prefer_liberation_payloads = self.payloads_cb.isChecked()
+        self.port = self.port_input.value()
         set_theme_index(self.themeSelect.currentIndex())
 
         if not os.path.isdir(self.saved_game_dir):
@@ -115,7 +154,7 @@ class QLiberationPreferences(QFrame):
                 QMessageBox.StandardButton.Yes,
                 QMessageBox.StandardButton.No,
             )
-            if warning_dialog == QMessageBox.No:
+            if warning_dialog == QMessageBox.StandardButton.No:
                 return False
         elif not os.path.isdir(self.dcs_install_dir):
             error_dialog = QMessageBox.critical(
@@ -130,7 +169,7 @@ class QLiberationPreferences(QFrame):
                 QMessageBox.StandardButton.Ignore,
                 QMessageBox.StandardButton.Ok,
             )
-            if error_dialog == QMessageBox.Ignore:
+            if error_dialog == QMessageBox.StandardButton.Ignore:
                 self.install_dir_ignore_warning = True
             return False
         elif not os.path.isdir(
@@ -145,7 +184,12 @@ class QLiberationPreferences(QFrame):
             error_dialog.exec_()
             return False
 
-        liberation_install.setup(self.saved_game_dir, self.dcs_install_dir)
+        liberation_install.setup(
+            self.saved_game_dir,
+            self.dcs_install_dir,
+            self.prefer_liberation_payloads,
+            self.port,
+        )
         liberation_install.save_config()
         liberation_theme.save_theme_config()
         return True

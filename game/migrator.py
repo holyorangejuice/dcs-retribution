@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import typing
-from datetime import datetime
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any
 
 from dcs.countries import countries_by_name
 
+from game.ato import FlightType
+from game.ato.flightplans.formation import FormationLayout
+from game.ato.flightplans.waypointbuilder import WaypointBuilder
 from game.ato.packagewaypoints import PackageWaypoints
 from game.data.doctrine import MODERN_DOCTRINE, COLDWAR_DOCTRINE, WWII_DOCTRINE
 from game.theater import ParkingType, SeasonalConditions
 
 if TYPE_CHECKING:
     from game import Game
+    from game.ato import Flight
 
 
 def try_set_attr(obj: Any, attr_name: str, val: Any = None) -> None:
@@ -35,6 +39,7 @@ class Migrator:
         self._update_squadrons()
         self._release_untasked_flights()
         self._update_weather()
+        self._update_tgos()
 
     def _update_doctrine(self) -> None:
         doctrines = [
@@ -58,19 +63,20 @@ class Migrator:
         for c in self.game.coalitions:
             for p in c.ato.packages:
                 if p.waypoints and not hasattr(p.waypoints, "initial"):
-                    p.waypoints = PackageWaypoints.create(p, c)
+                    p.waypoints = PackageWaypoints.create(p, c, False)
 
     def _update_package_attributes(self) -> None:
         for c in self.game.coalitions:
             for p in c.ato.packages:
                 try_set_attr(p, "custom_name")
                 try_set_attr(p, "frequency")
-                if self.is_liberation and isinstance(p.time_over_target, datetime):  # type: ignore
+                if isinstance(p.time_over_target, timedelta):  # type: ignore
                     p.time_over_target = (  # type: ignore
-                        p.time_over_target - self.game.conditions.start_time
+                        p.time_over_target + self.game.conditions.start_time
                     )
 
     def _update_control_points(self) -> None:
+        is_sinai = self.game.theater.terrain.name == "SinaiMap"
         for cp in self.game.theater.controlpoints:
             is_carrier = cp.is_carrier
             is_lha = cp.is_lha
@@ -89,13 +95,38 @@ class Migrator:
             try_set_attr(cp, "ground_spawns_roadbase", [])
             try_set_attr(cp, "helipads_quad", [])
             try_set_attr(cp, "helipads_invisible", [])
+            if (
+                cp.dcs_airport and is_sinai and cp.dcs_airport.id == 20
+            ):  # fix for Hatzor
+                beacons = cp.dcs_airport.beacons
+                faulty_beacon = [x for x in beacons if x.id == "airfield20_0"]
+                if faulty_beacon:
+                    beacons.remove([x for x in beacons if x.id == "airfield20_0"][0])
+
+    def _update_flight_plan(self, f: Flight) -> None:
+        layout = f.flight_plan.layout
+        try_set_attr(layout, "nav_to", [])
+        try_set_attr(layout, "nav_from", [])
+        if f.flight_type == FlightType.CAS:
+            try_set_attr(layout, "ingress", None)
+        if isinstance(layout, FormationLayout):
+            if not layout.join and f.package.waypoints:
+                builder = WaypointBuilder(f, [])
+                layout.join = builder.join(f.package.waypoints.join)
 
     def _update_flights(self) -> None:
+        to_remove = []
         for f in self.game.db.flights.objects.values():
             try_set_attr(f, "frequency")
             try_set_attr(f, "tacan")
             try_set_attr(f, "tcn_name")
             try_set_attr(f, "fuel", f.unit_type.max_fuel)
+            if f.package in f.squadron.coalition.ato.packages:
+                self._update_flight_plan(f)
+            else:
+                to_remove.append(f.id)
+        for fid in to_remove:
+            self.game.db.flights.remove(fid)
 
     def _release_untasked_flights(self) -> None:
         for cp in self.game.theater.controlpoints:
@@ -115,6 +146,7 @@ class Migrator:
             "Netherlands": "The Netherlands",
             "CHN": "China",
         }
+        # Squadrons
         for cp in self.game.theater.controlpoints:
             for s in cp.squadrons:
                 preferred_task = max(
@@ -123,6 +155,7 @@ class Migrator:
                 )
                 try_set_attr(s, "primary_task", preferred_task)
                 try_set_attr(s, "max_size", 12)
+                try_set_attr(s, "radio_presets", {})
                 if isinstance(s.country, str):
                     c = country_dict.get(s.country, s.country)
                     s.country = countries_by_name[c]()
@@ -139,6 +172,11 @@ class Migrator:
 
                 if self.is_liberation:
                     s.set_auto_assignable_mission_types(s.auto_assignable_mission_types)
+        # SquadronDefs
+        for coa in self.game.coalitions:
+            for ac, sdefs in coa.air_wing.squadron_defs.items():
+                for sdef in sdefs:
+                    try_set_attr(sdef, "radio_presets", {})
 
     @typing.no_type_check
     def _update_factions(self) -> None:
@@ -193,3 +231,8 @@ class Migrator:
                 midnight_turbulence_per_10cm=0.4,
                 weather_type_chances=sc.weather_type_chances,
             )
+
+    def _update_tgos(self) -> None:
+        for go in self.game.theater.ground_objects:
+            try_set_attr(go, "task", None)
+            try_set_attr(go, "hide_on_mfd", False)

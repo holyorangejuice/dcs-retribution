@@ -187,15 +187,21 @@ RADIOS: List[Radio] = [
             RadioRange(MHz(136), MHz(155), kHz(25), Modulation.FM),
         ),
     ),
-    Radio("AN/ARC-222", (RadioRange(MHz(116), MHz(152), kHz(25), Modulation.AM),)),
+    Radio(
+        "AN/ARC-222",
+        (
+            RadioRange(MHz(116), MHz(152), kHz(25), Modulation.AM),
+            RadioRange(MHz(30), MHz(88), kHz(25), Modulation.FM),
+        ),
+    ),
     Radio("SCR-522", (RadioRange(MHz(100), MHz(156), kHz(25), Modulation.AM),)),
     Radio("A.R.I. 1063", (RadioRange(MHz(100), MHz(156), kHz(25), Modulation.AM),)),
     Radio("BC-1206", (RadioRange(kHz(200), kHz(400), kHz(10), Modulation.AM),)),
     Radio(
         "TRT ERA 7000 V/UHF",
         (
-            RadioRange(MHz(118), MHz(150), kHz(25), Modulation.AM),
             RadioRange(MHz(225), MHz(400), kHz(25), Modulation.AM),
+            RadioRange(MHz(118), MHz(150), kHz(25), Modulation.AM),
         ),
     ),
     Radio(
@@ -241,10 +247,10 @@ RADIOS: List[Radio] = [
     Radio(
         "R-863",
         (
-            RadioRange(MHz(100), MHz(150), kHz(25), Modulation.AM),
             RadioRange(MHz(220), MHz(400), kHz(25), Modulation.AM),
-            RadioRange(MHz(100), MHz(150), kHz(25), Modulation.FM),
+            RadioRange(MHz(100), MHz(150), kHz(25), Modulation.AM),
             RadioRange(MHz(220), MHz(400), kHz(25), Modulation.FM),
+            RadioRange(MHz(100), MHz(150), kHz(25), Modulation.FM),
         ),
     ),
     # UH-1H
@@ -257,8 +263,8 @@ RADIOS: List[Radio] = [
     Radio(
         "V/UHF TRAP 136",
         (
-            RadioRange(MHz(118), MHz(144), kHz(25), Modulation.AM),
             RadioRange(MHz(225), MHz(400), kHz(25), Modulation.AM),
+            RadioRange(MHz(118), MHz(144), kHz(25), Modulation.AM),
         ),
     ),
     Radio("UHF TRAP 137B", (RadioRange(MHz(225), MHz(400), kHz(25), Modulation.AM),)),
@@ -266,9 +272,9 @@ RADIOS: List[Radio] = [
     Radio(
         "R-800",
         (
-            RadioRange(MHz(30), MHz(88), kHz(25), Modulation.AM),
-            RadioRange(MHz(108), MHz(174), kHz(25), Modulation.AM),
             RadioRange(MHz(225), MHz(400), kHz(25), Modulation.AM),
+            RadioRange(MHz(108), MHz(174), kHz(25), Modulation.AM),
+            RadioRange(MHz(30), MHz(88), kHz(25), Modulation.AM),
         ),
     ),
     # MB-339A
@@ -288,18 +294,11 @@ RADIOS: List[Radio] = [
         "SRT-651/N",
         (
             RadioRange(
-                MHz(30),
-                MHz(88),
+                MHz(225),
+                MHz(400),
                 kHz(25),
-                Modulation.FM,
-                frozenset((MHz(40, 500),)),
-            ),
-            RadioRange(
-                MHz(108),
-                MHz(156),
-                kHz(25),
-                Modulation.AM,
-                frozenset((MHz(121, 500),)),
+                Modulation.AM,  # Actually AM/FM, but we can't represent that.
+                frozenset((MHz(243),)),
             ),
             RadioRange(
                 MHz(156),
@@ -309,12 +308,27 @@ RADIOS: List[Radio] = [
                 frozenset((MHz(156, 800),)),
             ),
             RadioRange(
-                MHz(225),
-                MHz(400),
+                MHz(108),
+                MHz(156),
                 kHz(25),
-                Modulation.AM,  # Actually AM/FM, but we can't represent that.
-                frozenset((MHz(243),)),
+                Modulation.AM,
+                frozenset((MHz(121, 500),)),
             ),
+            RadioRange(
+                MHz(30),
+                MHz(88),
+                kHz(25),
+                Modulation.FM,
+                frozenset((MHz(40, 500),)),
+            ),
+        ),
+    ),
+    # UH-60L
+    Radio(
+        "AN/ARC-201",
+        (
+            # The Range from 30-88MHz should be FM but its modeled as AM in dcs
+            RadioRange(MHz(30), MHz(88), kHz(25), Modulation.AM),
         ),
     ),
 ]

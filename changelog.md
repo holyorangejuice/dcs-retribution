@@ -4,12 +4,55 @@
 * **[Package Planning]** Option to "Auto-Create" package
 * **[Modding]** Custom weapons injection system (definition in aircraft's yaml file)
 * **[Payload Editor]** Ability to save/back-up payloads
+* **[Options]** New option in Settings: CAS engagement range (nmi)
+* **[Options]** New option in Settings: Convert untasked OPFOR aircraft into client slots
+* **[Options]** Split the **Disable idle aircraft at airfields** setting into **Disable untasked BLUFOR aircraft at airfields** and **Disable untasked OPFOR aircraft at airfields**
+* **[Options]** Split off the **Automatic AWACS package planning** and **Automatic Theater tanker package planning** settings from **Automatic package planning behavior** so players can choose to have AWACS and theater tankers auto-planned, while managing everything else themselves
+* **[Modding]** Updated support for Su-30 mod to V2.7.3 Beta
+* **[Modding]** Updated support for Su-57 mod to build-04
+* **[Modding]** Updated support for F-4B/C Phantom mod to 2.8.7.204
+* **[Modding]** Updated Community A-4E-C mod version support to 2.2.0 release.
+* **[Modding]** Added F/A-18E/F Super Hornet AI Tanker mod support (Chiller Juice Studios SuperBug Tanker AI version 1.4)
+* **[Modding]** Updated Irondome support to IDF Assets Pack V1.1, adding support for the David's Sling
+* **[Radios]** Added HF-FM band for AN/ARC-222
+* **[Radios]** Ability to define preset channels for radios on squadron level (for human pilots only)
+* **[Mission Planning]** Avoid helicopters being assigned as escort to planes and vice-versa
+* **[Mission Planning]** Allow attack helicopters to escort other helicopters
+* **[UI]** Allow changing waypoint names in FlightEdit's waypoints tab
+* **[Waypoints]** Allow user to add navigation waypoints where possible without degrading to a custom flight-plan
+* **[Campaign Management]** Improve squadron retreat logic to account for parking-slot sizes
+* **[Autoplanner]** Support for auto-planning Air Assaults
+* **[UI]** Improved frequency selector to support all modeled bands for every aircraft's intra-flight radio
+* **[Options]** New options in Settings: Helicopter waypoint altitude (feet AGL) for combat & cruise waypoints
+* **[Options]** New options in Settings: Spawn ground power trucks at ground starts in airbases/roadbases
+* **[Options]** Option for hiding TGOs (with IADS roles) on MFD
+* **[Plugins]** Splash Damage 2.1 with Clusters and Ship Radar effects.
+* **[COMMs]** Aircraft-specific callsigns will now also be used.
+* **[COMMs]** Ability to set a specific callsign to a flight.
+* **[Mission Generator]** Channel terrain fix on exclusion zones, sea zones and inclusion zones
+* **[Options]** Cheat-option for accessing Air Wing Config Dialog after campaign start (re-initializes turn if applied, thus plan your mission ___after___ making changes)
+* **[Options]** Option to enable unlimited fuel for AI (player and non-player flights)
+* **[Mission Generator]** F-15E Strike targets are automatically added as Mission Set 1 
+* **[Mission Generator]** Set F-14's IP waypoint according to the flight-plan's ingress point
+* **[Mission Generator]** Automatically de-spawn aircraft when arrival/divert is an off-map spawn
+* **[Options]** Option to de-spawn AI flights in the air if their start-type was manually set to In-Flight
+* **[Config]** Preference setting to use custom Liberation payloads instead of prioritizing Retribution's default
+* **[Config]** Preference setting to configure the server-port on which Retribution's back-end will run
 
 ## Fixes
 * **[Mission Generation]** Anti-ship strikes should use "group attack" in their attack-task
 * **[New Game Wizard]** Faction selection overview doesn't update when inverting map
+* **[New Game Wizard]** Aircraft mods are now handled better when they are disabled
 * **[Payloads]** Added/Updated (missing) payloads
 * **[Aircraft Tasking]** Revised aircraft tasking, filtering out incompatible tasks for several aircraft
+* **[Data]** Corrected the class of the USS Samuel Chase from Logistics to LandingShip, in order to prevent it being spawned as part of AAA sites.
+* **[Mission Generation]** Helicopters oscillating due to over-speeding
+* **[Mission Generation]** Fix infinite loop when using "Fast-Forward to first contact"
+* **[Capture Logic]** Release all parking slots when an airbase is captured
+* **[Modding]** Swedish Military Assets Pack air defence presets are now correctly removed from the faction when the mod is disabled.
+* **[Mission Generation]** Naval aircraft not always returning to carrier
+* **[Mission Generation]** AI AirLift aircraft crashing into terrain due to insufficient waypoints
+* **[Mission Generation]** Fix friendly AI shooting at fires on the front-line
 
 # Retribution v1.2.1 (hotfix)
 
@@ -37,7 +80,7 @@
   * AEW&C threat buffer distance (nmi)
   * Theater tanker threat buffer distance (nmi)
 * **[Options]** Improved the option to configure OPFOR autoplanner aggressiveness. The AI might now take even more risks and plan missions against defended targets.
-* Added three new options in Settings:
+* **[Options]** Added three new options in Settings:
   * Autoplanner plans refueling flights for Strike packages
   * Autoplanner plans refueling flights for OCA packages
   * Autoplanner plans refueling flights for DEAD packages
@@ -189,9 +232,51 @@ BAI/ANTISHIP/DEAD/STRIKE/BARCAP/CAS/OCA/AIR-ASSAULT (main) missions
 # Liberation:
 ## Features/Improvements
 
-* **[Engine]** Support for DCS 2.8.6.41363, including F-15E support.
+* **[Data]** Added support for the ARA Veinticinco de Mayo.
+* **[Data]** Changed display name of the AI-only F-15E Strike Eagle for clarity.
+* **[Flight Planning]** Improved IP selection for targets that are near the center of a threat zone.
+* **[Flight Planning]** Moved CAS ingress point off the front line so that the AI begins their target search earlier.
+* **[Flight Planning]** Loadouts and aircraft properties can now be set per-flight member. Warning: AI flights should not use mixed loadouts.
+* **[Flight Planning]** Laser codes that are pre-assigned to weapons at mission start can now be chosen from a list in the loadout UI. This does not affect the aircraft's TGP, just the weapons. Currently only implemented for the F-15E S4+ and F-16C.
+* **[Mission Generation]** Configured target and initial points for F-15E S4+.
+* **[Modding]** Factions can now specify the ship type to be used for cargo shipping. The Handy Wind will be used by default, but WW2 factions can pick something more appropriate.
+* **[Modding]** Unit variants can now set a display name separate from their ID.
+* **[UI]** An error will be displayed when invalid fast-forward options are selected rather than beginning a never ending simulation.
+* **[UI]** Added cheats for instantly repairing and destroying runways.
+* **[UI]** Improved usability of the flight properties UI. It now shows human-readable names and uses more appropriate UI elements.
+* **[UI]** The map now shows the real front line bounds.
 
 ## Fixes
+
+* **[Campaign]** Fixed error when canceling squadron transfer if the current location would be exactly full.
+* **[Data]** Fixed the class of the Samuel Chase so it can't be picked for a AAA or SHORAD site.
+* **[Data]** Allow CH-47D, CH-53E and UH-60A to operate from carriers and LHAs.
+* **[Data]** Added the F-15E's LANTIRN to the list of known targeting pods. Player F-15E flight with TGPs will now be assigned laser codes.
+* **[Flight Planning]** Patrolling flight plans (CAS, CAP, refueling, etc) now handle TOT offsets.
+* **[Mission Generation]** Restored previous AI behavior for anti-ship missions. A DCS update caused only a single aircraft in a flight to attack. The full flight will now attack like they used to.
+* **[Mission Generation]** Fix generation of OCA Runway missions to allow LGBs to be used.
+* **[Mission Generation]** Fixed AI flights flying far too slowly toward NAV points.
+* **[Mission Generation]** Fixed "division by zero" error on mission generation when a flight has an "In-Flight" start type and starts on top of a mission waypoint.
+* **[Modding]** Unit variants can now actually override base unit type properties.
+* **[Plugins]** Fixed Lua errors in Skynet plugin that would occur whenever one coalition had no IADS nodes.
+* **[UI]** Fixed deleting waypoints in custom flight plans deleting the wrong waypoint.
+* **[UI]** Fixed flight properties UI to support F-15E S4+ laser codes.
+* **[UI]** Fixed UI bug where altering an "ahead of package" TOT offset would change the offset back to a "behind pacakge" offset.
+* **[UI]** Fixed bug where changing TOT offsets could result in flight startup times that are in the past.
+
+# 8.1.0
+
+Saves from 8.0.0 are compatible with 8.1.0
+
+## Features/Improvements
+
+* **[Engine]** Support for DCS 2.8.6.41363, including F-15E support.
+* **[UI]** Flight loadout/properties tab is now scrollable.
+
+## Fixes
+
+* **[Campaign]** Fixed liveries for premade squadrons all being off-by-one.
+* **[UI]** Fixed numbering of waypoints in the map and flight dialog (first waypoint is now 0 rather than 1).
 
 # 8.0.0
 

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import logging
 
-from PySide2 import QtGui, QtWidgets
+from PySide6 import QtGui, QtWidgets
 
 from game.campaignloader.campaign import Campaign
 from game.dcs.aircrafttype import AircraftType
@@ -20,7 +20,7 @@ from qt_ui.windows.newgame.WizardPages.QTheaterConfiguration import (
 class NewGameWizard(QtWidgets.QWizard):
     def __init__(self, parent=None):
         super(NewGameWizard, self).__init__(parent)
-        self.setOption(QtWidgets.QWizard.IndependentPages)
+        self.setOption(QtWidgets.QWizard.WizardOption.IndependentPages)
 
         self.campaigns = list(sorted(Campaign.load_each(), key=lambda x: x.name))
 
@@ -41,10 +41,10 @@ class NewGameWizard(QtWidgets.QWizard):
         self.addPage(ConclusionPage(self))
 
         self.setPixmap(
-            QtWidgets.QWizard.WatermarkPixmap,
+            QtWidgets.QWizard.WizardPixmap.WatermarkPixmap,
             QtGui.QPixmap("./resources/ui/wizard/watermark1.png"),
         )
-        self.setWizardStyle(QtWidgets.QWizard.ModernStyle)
+        self.setWizardStyle(QtWidgets.QWizard.WizardStyle.ModernStyle)
 
         self.setWindowTitle("New Game")
         self.generatedGame = None
@@ -95,6 +95,7 @@ class NewGameWizard(QtWidgets.QWizard):
             f_15_idf=self.field("f_15_idf"),
             f_16_idf=self.field("f_16_idf"),
             fa_18efg=self.field("fa_18efg"),
+            fa18ef_tanker=self.field("fa18ef_tanker"),
             f22_raptor=self.field("f22_raptor"),
             f84g_thunderjet=self.field("f84g_thunderjet"),
             f100_supersabre=self.field("f100_supersabre"),
@@ -138,7 +139,7 @@ class NewGameWizard(QtWidgets.QWizard):
         self.generatedGame = generator.generate()
 
         AirWingConfigurationDialog(
-            self.generatedGame, generator.generator_settings, self
+            self.generatedGame, generator.generator_settings.squadrons_start_full, self
         ).exec_()
 
         g = self.generatedGame
@@ -163,7 +164,7 @@ class IntroPage(QtWidgets.QWizardPage):
 
         self.setTitle("Introduction")
         self.setPixmap(
-            QtWidgets.QWizard.WatermarkPixmap,
+            QtWidgets.QWizard.WizardPixmap.WatermarkPixmap,
             QtGui.QPixmap("./resources/ui/wizard/watermark1.png"),
         )
 
@@ -185,7 +186,7 @@ class ConclusionPage(QtWidgets.QWizardPage):
         self.setTitle("Conclusion")
         self.setSubTitle("\n\n")
         self.setPixmap(
-            QtWidgets.QWizard.WatermarkPixmap,
+            QtWidgets.QWizard.WizardPixmap.WatermarkPixmap,
             QtGui.QPixmap("./resources/ui/wizard/watermark2.png"),
         )
 

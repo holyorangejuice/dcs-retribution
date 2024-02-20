@@ -12,15 +12,15 @@ from dcs.country import Country
 from dcs.mission import Mission
 from dcs.terrain.terrain import NoParkingSlotError
 from dcs.triggers import TriggerOnce, Event
+from dcs.unit import Skill
 from dcs.unitgroup import FlyingGroup, StaticGroup
 
 from game.ato.airtaaskingorder import AirTaskingOrder
 from game.ato.flight import Flight
-from game.ato.flightstate import Completed
+from game.ato.flightstate import Completed, WaitingForStart
 from game.ato.flighttype import FlightType
 from game.ato.package import Package
 from game.ato.starttype import StartType
-from game.missiongenerator.lasercoderegistry import LaserCodeRegistry
 from game.missiongenerator.missiondata import MissionData
 from game.radio.radios import RadioRegistry
 from game.radio.tacan import TacanRegistry
@@ -52,7 +52,6 @@ class AircraftGenerator:
         time: datetime,
         radio_registry: RadioRegistry,
         tacan_registry: TacanRegistry,
-        laser_code_registry: LaserCodeRegistry,
         unit_map: UnitMap,
         mission_data: MissionData,
         helipads: dict[ControlPoint, list[StaticGroup]],
@@ -65,7 +64,6 @@ class AircraftGenerator:
         self.time = time
         self.radio_registry = radio_registry
         self.tacan_registy = tacan_registry
-        self.laser_code_registry = laser_code_registry
         self.unit_map = unit_map
         self.flights: List[FlightData] = []
         self.mission_data = mission_data
@@ -178,6 +176,17 @@ class AircraftGenerator:
         assert isinstance(squadron.location, Airfield) or isinstance(
             squadron.location, Fob
         )
+        if (
+            squadron.coalition.player
+            and self.game.settings.perf_disable_untasked_blufor_aircraft
+        ):
+            return
+        elif (
+            not squadron.coalition.player
+            and self.game.settings.perf_disable_untasked_opfor_aircraft
+        ):
+            return
+
         for _ in range(squadron.untasked_aircraft):
             # Creating a flight even those this isn't a fragged mission lets us
             # reuse the existing debriefing code.
@@ -203,6 +212,20 @@ class AircraftGenerator:
                 self.mission_data,
             ).create_idle_aircraft()
             if group:
+                if (
+                    not squadron.coalition.player
+                    and squadron.aircraft.flyable
+                    and (
+                        self.game.settings.enable_squadron_pilot_limits
+                        or squadron.number_of_available_pilots > 0
+                    )
+                    and self.game.settings.untasked_opfor_client_slots
+                ):
+                    flight.state = WaitingForStart(
+                        flight, self.game.settings, self.game.conditions.start_time
+                    )
+                    group.uncontrolled = False
+                    group.units[0].skill = Skill.Client
                 AircraftPainter(flight, group).apply_livery()
                 self.unit_map.add_aircraft(group, flight)
 
@@ -228,7 +251,6 @@ class AircraftGenerator:
                 self.time,
                 self.radio_registry,
                 self.tacan_registy,
-                self.laser_code_registry,
                 self.mission_data,
                 dynamic_runways,
                 self.use_client,
@@ -249,17 +271,16 @@ class AircraftGenerator:
             or flight.client_count
             and (
                 not self.need_ecm
-                or flight.loadout.has_weapon_of_type(WeaponType.JAMMER)
+                or flight.any_member_has_weapon_of_type(WeaponType.JAMMER)
             )
         ):
             self.ewrj_package_dict[id(flight.package)].append(group)
 
     def _reserve_frequencies_and_tacan(self, ato: AirTaskingOrder) -> None:
         for package in ato.packages:
-            if package.frequency is None:
-                continue
-            if package.frequency not in self.radio_registry.allocated_channels:
-                self.radio_registry.reserve(package.frequency)
+            pfreq = package.frequency
+            if pfreq and pfreq not in self.radio_registry.allocated_channels:
+                self.radio_registry.reserve(pfreq)
             for f in package.flights:
                 if (
                     f.frequency

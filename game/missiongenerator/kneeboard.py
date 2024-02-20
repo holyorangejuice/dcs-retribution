@@ -32,6 +32,8 @@ from typing import Dict, Iterator, List, Optional, TYPE_CHECKING, Tuple
 
 from PIL import Image, ImageDraw, ImageFont
 from dcs.mission import Mission
+from dcs.planes import F_15ESE
+from suntime import Sun  # type: ignore
 from tabulate import tabulate
 
 from game.ato.flighttype import FlightType
@@ -116,7 +118,8 @@ class KneeboardPageWriter:
             )
 
         self.draw.text(self.position, text, font=font, fill=fill)
-        width, height = self.draw.textsize(text, font=font)  # type:ignore[attr-defined]
+        box = self.draw.textbbox(self.position, text, font=font)
+        height = abs(box[1] - box[3])  # abs(top - bottom) => offset
         self.y += height + self.line_spacing
         self.text_buffer.append(text)
 
@@ -170,14 +173,14 @@ class KneeboardPageWriter:
     def wrap_line_with_font(
         inputstr: str, max_width: int, font: ImageFont.FreeTypeFont
     ) -> str:
-        if font.getsize(inputstr)[0] <= max_width:  # type:ignore[attr-defined]
+        if font.getlength(inputstr) <= max_width:
             return inputstr
         tokens = inputstr.split(" ")
         output = ""
         segments = []
         for token in tokens:
             combo = output + " " + token
-            if font.getsize(combo)[0] > max_width:  # type:ignore[attr-defined]
+            if font.getlength(combo) > max_width:
                 segments.append(output + "\n")
                 output = token
             else:
@@ -262,11 +265,11 @@ class FlightPlanBuilder:
             ]
         )
 
-    def _format_time(self, time: Optional[datetime.timedelta]) -> str:
+    @staticmethod
+    def _format_time(time: datetime.datetime | None) -> str:
         if time is None:
             return ""
-        local_time = self.start_time + time
-        return f"{local_time.strftime('%H:%M:%S')}{'Z' if local_time.tzinfo is not None else ''}"
+        return f"{time.strftime('%H:%M:%S')}{'Z' if time.tzinfo is not None else ''}"
 
     def _format_alt(self, alt: Distance) -> str:
         return f"{self.units.distance_short(alt):.0f}"
@@ -300,6 +303,9 @@ class FlightPlanBuilder:
         elif self.last_waypoint.tot is not None:
             last_time = self.last_waypoint.tot
         else:
+            return "-"
+
+        if (waypoint.tot - last_time).total_seconds() == 0.0:
             return "-"
 
         speed = mps(
@@ -361,7 +367,10 @@ class BriefingPage(KneeboardPage):
             headers=["", "Airbase", "ATC", "TCN", "I(C)LS", "RWY"],
         )
 
-        writer.heading("Flight Plan")
+        writer.heading(
+            f"Flight Plan ({self.flight.squadron.aircraft.variant_id} - "
+            f"{self.flight.flight_type.value})"
+        )
 
         units = self.flight.aircraft_type.kneeboard_units
 
@@ -426,6 +435,23 @@ class BriefingPage(KneeboardPage):
         )
 
         fl = self.flight
+
+        start_pos = fl.waypoints[0].position.latlng()
+        sun = Sun(start_pos.lat, start_pos.lng)
+
+        date = fl.squadron.coalition.game.date
+        tz = fl.squadron.coalition.game.theater.timezone
+
+        # Get today's sunrise and sunset in UTC
+        sr_utc = sun.get_sunrise_time(date)
+        ss_utc = sun.get_sunset_time(date)
+        sr = sr_utc + tz.utcoffset(sun.get_sunrise_time(date))
+        ss = ss_utc + tz.utcoffset(sun.get_sunset_time(date))
+
+        writer.text(
+            f"Sunrise - Sunset: {sr.strftime('%H:%M')} - {ss.strftime('%H:%M')}"
+            f" ({sr_utc.strftime('%H:%M')} - {ss_utc.strftime('%H:%M')} UTC)"
+        )
 
         if fl.bingo_fuel and fl.joker_fuel:
             writer.table(
@@ -519,7 +545,8 @@ class SupportPage(KneeboardPage):
         self.jtacs = jtacs
         self.start_time = start_time
         self.dark_kneeboard = dark_kneeboard
-        self.comms.append(CommInfo("Flight", self.flight.intra_flight_channel))
+        flight_name = self.flight.custom_name if self.flight.custom_name else "Flight"
+        self.comms.append(CommInfo(flight_name, self.flight.intra_flight_channel))
 
     def write(self, path: Path) -> None:
         writer = KneeboardPageWriter(dark_theme=self.dark_kneeboard)
@@ -549,9 +576,12 @@ class SupportPage(KneeboardPage):
                 ]
             )
         for f in self.package_flights:
+            callsign = f.callsign
+            if f.custom_name:
+                callsign = f"{callsign}\n({f.custom_name})"
             comm_ladder.append(
                 [
-                    f.callsign,
+                    callsign,
                     str(f.flight_type),
                     KneeboardPageWriter.wrap_line(str(f.aircraft_type), 23),
                     str(len(f.units)),
@@ -599,7 +629,7 @@ class SupportPage(KneeboardPage):
                     tanker.callsign,
                     "Tanker",
                     KneeboardPageWriter.wrap_line(tanker.variant, 21),
-                    str(tanker.tacan),
+                    str(tanker.tacan) if tanker.tacan else "N/A",
                     self.format_frequency(tanker.freq),
                     "TOT: " + tot + "\n" + "TOS: " + tos,
                 ]
@@ -640,11 +670,11 @@ class SupportPage(KneeboardPage):
         )
         return f"{channel_name}\n{frequency}"
 
-    def _format_time(self, time: Optional[datetime.timedelta]) -> str:
+    @staticmethod
+    def _format_time(time: datetime.datetime | None) -> str:
         if time is None:
             return ""
-        local_time = self.start_time + time
-        return f"{local_time.strftime('%H:%M:%S')}{'Z' if local_time.tzinfo is not None else ''}"
+        return f"{time.strftime('%H:%M:%S')}{'Z' if time.tzinfo is not None else ''}"
 
     @staticmethod
     def _format_duration(time: Optional[datetime.timedelta]) -> str:
@@ -722,6 +752,15 @@ class StrikeTaskPage(KneeboardPage):
         else:
             custom_name_title = ""
         writer.title(f"{self.flight.callsign} Strike Task Info{custom_name_title}")
+
+        if self.flight.units[0].unit_type == F_15ESE:
+            i: int = 0
+            for target in self.targets:
+                if not target.waypoint.pretty_name.__contains__("DTC"):
+                    target.waypoint.pretty_name = (
+                        f"{target.waypoint.pretty_name} (DTC M{(i//8)+1}.{i%9+1})"
+                    )
+                    i = i + 1
 
         writer.table(
             [self.target_info_row(t, writer) for t in self.targets],

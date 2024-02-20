@@ -3,14 +3,15 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import timedelta
-from typing import TYPE_CHECKING, TypeVar, Optional
+from datetime import datetime, timedelta
+from typing import Optional
+from typing import TYPE_CHECKING, TypeVar
 
 from dcs import Point
 
 from game.flightplan import HoldZoneGeometry
 from game.theater import MissionTarget
-from game.utils import Speed, meters, nautical_miles
+from game.utils import Speed, meters, nautical_miles, feet
 from .flightplan import FlightPlan
 from .formation import FormationFlightPlan, FormationLayout
 from .ibuilder import IBuilder
@@ -80,18 +81,18 @@ class FormationAttackFlightPlan(FormationFlightPlan, ABC):
         return total
 
     @property
-    def join_time(self) -> timedelta:
-        travel_time = self.travel_time_between_waypoints(
+    def join_time(self) -> datetime:
+        travel_time = self.total_time_between_waypoints(
             self.layout.join, self.layout.ingress
         )
         return self.ingress_time - travel_time
 
     @property
-    def split_time(self) -> timedelta:
-        travel_time_ingress = self.travel_time_between_waypoints(
+    def split_time(self) -> datetime:
+        travel_time_ingress = self.total_time_between_waypoints(
             self.layout.ingress, self.target_area_waypoint
         )
-        travel_time_egress = self.travel_time_between_waypoints(
+        travel_time_egress = self.total_time_between_waypoints(
             self.target_area_waypoint, self.layout.split
         )
         minutes_at_target = 0.75 * len(self.layout.targets)
@@ -104,22 +105,22 @@ class FormationAttackFlightPlan(FormationFlightPlan, ABC):
         )
 
     @property
-    def ingress_time(self) -> timedelta:
+    def ingress_time(self) -> datetime:
         tot = self.tot
-        travel_time = self.travel_time_between_waypoints(
+        travel_time = self.total_time_between_waypoints(
             self.layout.ingress, self.target_area_waypoint
         )
         return tot - travel_time
 
     @property
-    def initial_time(self) -> timedelta:
+    def initial_time(self) -> datetime:
         tot = self.tot
         travel_time = self.travel_time_between_waypoints(
             self.layout.initial, self.target_area_waypoint
         )
         return tot - travel_time
 
-    def tot_for_waypoint(self, waypoint: FlightWaypoint) -> timedelta | None:
+    def tot_for_waypoint(self, waypoint: FlightWaypoint) -> datetime | None:
         if waypoint == self.layout.ingress:
             return self.ingress_time
         elif waypoint == self.layout.initial:
@@ -141,8 +142,7 @@ class FormationAttackLayout(FormationLayout):
         if self.hold:
             yield self.hold
         yield from self.nav_to
-        if self.join:
-            yield self.join
+        yield self.join
         if self.lineup:
             yield self.lineup
         yield self.ingress
@@ -170,7 +170,7 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         targets: list[StrikeTarget] | None = None,
     ) -> FormationAttackLayout:
         assert self.package.waypoints is not None
-        builder = WaypointBuilder(self.flight, self.coalition, targets)
+        builder = WaypointBuilder(self.flight, targets)
 
         target_waypoints: list[FlightWaypoint] = []
         if targets is not None:
@@ -186,18 +186,14 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             )
 
         hold = None
-        join = None
-        if (
-            self.flight is self.package.primary_flight
-            or self.package.primary_flight
-            and isinstance(
-                self.package.primary_flight.flight_plan, FormationAttackFlightPlan
-            )
-        ):
+        if not self.flight.is_helo:
             hold = builder.hold(self._hold_point())
-            join = builder.join(self.package.waypoints.join)
-        split = builder.split(self.package.waypoints.split)
-        refuel = builder.refuel(self.package.waypoints.refuel)
+        join_pos = self.package.waypoints.join
+        if self.flight.is_helo:
+            join_pos = self.package.waypoints.ingress
+        join = builder.join(join_pos)
+        split = builder.split(self._get_split())
+        refuel = self._build_refuel(builder)
 
         ingress = builder.ingress(
             ingress_type, self.package.waypoints.ingress, self.package.target
@@ -215,13 +211,22 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             pos = ingress.position.point_from_heading(hdg, nautical_miles(10).meters)
             lineup = builder.nav(pos, self.flight.coalition.doctrine.ingress_altitude)
 
+        is_helo = self.flight.is_helo
+        ingress_egress_altitude = (
+            self.doctrine.ingress_altitude
+            if not is_helo
+            else feet(self.coalition.game.settings.heli_combat_alt_agl)
+        )
+        use_agl_ingress_egress = is_helo
+
         return FormationAttackLayout(
             departure=builder.takeoff(self.flight.departure),
             hold=hold,
             nav_to=builder.nav_path(
                 hold.position if hold else self.flight.departure.position,
                 join.position if join else ingress.position,
-                self.doctrine.ingress_altitude,
+                ingress_egress_altitude,
+                use_agl_ingress_egress,
             ),
             join=join,
             lineup=lineup,
@@ -231,14 +236,34 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
             split=split,
             refuel=refuel,
             nav_from=builder.nav_path(
-                refuel.position,
+                refuel.position if refuel else split.position,
                 self.flight.arrival.position,
-                self.doctrine.ingress_altitude,
+                ingress_egress_altitude,
+                use_agl_ingress_egress,
             ),
             arrival=builder.land(self.flight.arrival),
             divert=builder.divert(self.flight.divert),
             bullseye=builder.bullseye(),
         )
+
+    def _build_refuel(self, builder: WaypointBuilder) -> Optional[FlightWaypoint]:
+        refuel: Optional[FlightWaypoint] = None
+        can_plan = self.flight.coalition.air_wing.can_auto_plan(FlightType.REFUELING)
+        if not self.flight.is_helo and can_plan and self.package.waypoints:
+            refuel = builder.refuel(self.package.waypoints.refuel)
+        return refuel
+
+    @property
+    def primary_flight_is_air_assault(self) -> bool:
+        if self.flight is self.package.primary_flight:
+            # Can't call self.package.primary_flight.flight_plan here
+            # because the flight-plan wasn't created yet.
+            # Calling the fligh_plan property would result in infinite recursion
+            return self.flight.flight_type == FlightType.AIR_ASSAULT
+        else:
+            assert self.package.primary_flight is not None
+            fp = self.package.primary_flight.flight_plan
+            return fp.is_airassault
 
     @staticmethod
     def target_waypoint(
@@ -275,3 +300,13 @@ class FormationAttackBuilder(IBuilder[FlightPlanT, LayoutT], ABC):
         return HoldZoneGeometry(
             target, origin, ip, join, self.coalition, self.theater
         ).find_best_hold_point()
+
+    def _get_split(self) -> Point:
+        assert self.package.waypoints is not None
+        assert self.package.primary_flight is not None
+        split_pos = (
+            self.package.primary_flight.arrival.position
+            if self.package.primary_flight.is_helo
+            else self.package.waypoints.split
+        )
+        return split_pos

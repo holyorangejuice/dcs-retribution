@@ -22,7 +22,7 @@ class SquadronDefLoader:
     def squadron_directories() -> Iterator[Path]:
         from game import persistency
 
-        yield persistency.base_path() / "Retribution/Squadrons"
+        yield persistency.base_path() / "Retribution" / "Squadrons"
         yield Path("resources/squadrons")
 
     def load(self) -> dict[AircraftType, list[SquadronDef]]:
@@ -38,7 +38,7 @@ class SquadronDefLoader:
                         f"{squadron_def.country.name}, need {country.name}: {path}"
                     )
                     continue
-                if squadron_def.aircraft not in faction.aircrafts:
+                if squadron_def.aircraft not in faction.all_aircrafts:
                     logging.debug(
                         f"Not using squadron because {faction.name} cannot use "
                         f"{squadron_def.aircraft}: {path}"

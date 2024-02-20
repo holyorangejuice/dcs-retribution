@@ -10,9 +10,10 @@ from ..ato.starttype import StartType
 from ..db.database import Database
 
 if TYPE_CHECKING:
-    from game.dcs.aircrafttype import AircraftType
-    from game.squadrons.airwing import AirWing
     from game.ato.closestairfields import ClosestAirfields
+    from game.dcs.aircrafttype import AircraftType
+    from game.lasercodes import LaserCodeRegistry
+    from game.squadrons.airwing import AirWing
     from .missionproposals import ProposedFlight
 
 
@@ -24,6 +25,7 @@ class PackageBuilder:
         location: MissionTarget,
         closest_airfields: ClosestAirfields,
         air_wing: AirWing,
+        laser_code_registry: LaserCodeRegistry,
         flight_db: Database[Flight],
         is_player: bool,
         start_type: StartType,
@@ -33,6 +35,7 @@ class PackageBuilder:
         self.is_player = is_player
         self.package = Package(location, flight_db, auto_asap=asap)
         self.air_wing = air_wing
+        self.laser_code_registry = laser_code_registry
         self.start_type = start_type
 
     def plan_flight(self, plan: ProposedFlight) -> bool:
@@ -43,8 +46,10 @@ class PackageBuilder:
         caller should return any previously planned flights to the inventory
         using release_planned_aircraft.
         """
+        pf = self.package.primary_flight
+        heli = pf.is_helo if pf else False
         squadron = self.air_wing.best_squadron_for(
-            self.package.target, plan.task, plan.num_aircraft, this_turn=True
+            self.package.target, plan.task, plan.num_aircraft, heli, this_turn=True
         )
         if squadron is None:
             return False
@@ -60,6 +65,11 @@ class PackageBuilder:
             start_type,
             divert=self.find_divert_field(squadron.aircraft, squadron.location),
         )
+        for member in flight.iter_members():
+            if member.is_player:
+                member.assign_tgp_laser_code(
+                    self.laser_code_registry.alloc_laser_code()
+                )
         self.package.add_flight(flight)
         return True
 

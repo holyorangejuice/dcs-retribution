@@ -10,10 +10,15 @@ from .pydcswaypointbuilder import PydcsWaypointBuilder
 
 class CasIngressBuilder(PydcsWaypointBuilder):
     def add_tasks(self, waypoint: MovingPoint) -> None:
+        self.register_special_ingress_points()
         if isinstance(self.flight.flight_plan, CasFlightPlan):
+            patrol_center = (
+                self.flight.flight_plan.layout.patrol_start.position
+                + self.flight.flight_plan.layout.patrol_end.position
+            ) / 2
             waypoint.add_task(
                 EngageTargetsInZone(
-                    position=self.flight.flight_plan.layout.target.position,
+                    position=patrol_center,
                     radius=int(self.flight.flight_plan.engagement_distance.meters),
                     targets=[
                         Targets.All.GroundUnits.GroundVehicles,
@@ -26,7 +31,11 @@ class CasIngressBuilder(PydcsWaypointBuilder):
             logging.error("No CAS waypoint found. Falling back to search and engage")
             waypoint.add_task(
                 EngageTargets(
-                    max_distance=int(nautical_miles(10).meters),
+                    max_distance=int(
+                        nautical_miles(
+                            self.flight.coalition.game.settings.cas_engagement_range_distance
+                        ).meters
+                    ),
                     targets=[
                         Targets.All.GroundUnits.GroundVehicles,
                         Targets.All.GroundUnits.AirDefence.AAA,
